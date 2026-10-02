@@ -1,0 +1,38 @@
+# Runs on every push and pull request. A PR should only be merged when this is green.
+# The tests are offline (no API keys needed), so no secrets are used here.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Same Python version as the Dockerfile
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install requirements
+        run: python -m pip install -r requirements.txt
+
+      - name: Logic tests
+        run: python test_logic.py
+
+      - name: Data tests
+        run: python test_data.py
+
+      - name: AI manager tests (offline)
+        run: python test_ai_manager.py
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t nutrilenz .
