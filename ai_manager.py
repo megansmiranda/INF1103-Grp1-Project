@@ -254,3 +254,50 @@ def parse_ai_response(raw_text):
     if not isinstance(data, dict):
         raise ValueError("Expected a JSON object")
     return data
+
+
+# ===========================================================================
+# STEP 5: check every field (schema validation)
+# ===========================================================================
+
+def _check_string_list(data, field):
+    """Field must be a list whose items are non-empty strings ([] is allowed)."""
+    value = data[field]
+    if not isinstance(value, list):
+        raise ValueError(field + " must be a list")
+    for item in value:
+        if not isinstance(item, str) or not item.strip():
+            raise ValueError(field + " must only contain non-empty text")
+
+
+def validate_ai_response(data, has_claim):
+    """Raise ValueError if anything is wrong; otherwise return a clean copy.
+    We never 'fix' bad values (e.g. 'high' is rejected, not changed to 'HIGH');
+    the caller retries instead."""
+    # Exactly the six keys - nothing missing, nothing extra (e.g. no 'flags')
+    missing = [f for f in REQUIRED_FIELDS if f not in data]
+    extra = [f for f in data if f not in REQUIRED_FIELDS]
+    if missing:
+        raise ValueError("Missing fields: " + ", ".join(missing))
+    if extra:
+        raise ValueError("Unexpected fields: " + ", ".join(extra))
+
+    _check_string_list(data, "relevant_ingredients")
+    _check_string_list(data, "evidence")
+
+    if data["goal_alignment"] not in ALLOWED_GOAL_ALIGNMENT:
+        raise ValueError("Bad goal_alignment: " + str(data["goal_alignment"]))
+    if data["claim_status"] not in ALLOWED_CLAIM_STATUS:
+        raise ValueError("Bad claim_status: " + str(data["claim_status"]))
+    if data["confidence"] not in ALLOWED_CONFIDENCE:
+        raise ValueError("Bad confidence: " + str(data["confidence"]))
+    if not isinstance(data["explanation"], str) or not data["explanation"].strip():
+        raise ValueError("explanation must be non-empty text")
+
+    # Claim consistency: NO_CLAIM if and only if the user gave no claim
+    if not has_claim and data["claim_status"] != "NO_CLAIM":
+        raise ValueError("No claim was supplied, so claim_status must be NO_CLAIM")
+    if has_claim and data["claim_status"] == "NO_CLAIM":
+        raise ValueError("A claim was supplied, so claim_status cannot be NO_CLAIM")
+
+    return {field: data[field] for field in REQUIRED_FIELDS}
