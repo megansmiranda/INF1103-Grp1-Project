@@ -44,3 +44,48 @@ NON_RETRYABLE_ERRORS = ("CONFIGURATION_ERROR", "AUTHENTICATION_ERROR")
 
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+
+
+# ===========================================================================
+# Configuration: read API keys from the .env file / environment variables
+# ===========================================================================
+
+def load_env_file(path=None):
+    """Read KEY=VALUE lines from .env into os.environ.
+    Values already set in the environment (e.g. by Docker --env-file) win.
+    Keys are NEVER written in the code itself."""
+    env_path = Path(path) if path else Path(__file__).resolve().parent / ".env"
+    if not env_path.exists():
+        return
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+load_env_file()   # safe at import: it only reads a file, it never prompts
+
+
+def get_providers():
+    """Return the list of AI providers that have an API key, in order of preference.
+    Each provider is a small dictionary holding its name, key, model and call function."""
+    providers = []
+    gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if gemini_key:
+        providers.append({
+            "name": "gemini",
+            "api_key": gemini_key,
+            "model": os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite"),
+            "call": call_gemini,
+        })
+    groq_key = os.environ.get("GROQ_API_KEY", "").strip()
+    if groq_key:
+        providers.append({
+            "name": "groq",
+            "api_key": groq_key,
+            "model": os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b"),
+            "call": call_groq,
+        })
+    return providers
