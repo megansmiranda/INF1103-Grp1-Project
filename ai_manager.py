@@ -229,3 +229,28 @@ def call_groq(prompt, api_key, model):
     except (KeyError, IndexError, TypeError):
         logger.warning("Groq reply had an unexpected shape")
         return None, "INVALID_RESPONSE"
+
+
+# ===========================================================================
+# STEP 4: turn the reply text into a Python dictionary
+# ===========================================================================
+
+def parse_ai_response(raw_text):
+    """Convert the model's text into a dict. Raises ValueError if it is not a JSON object."""
+    if not isinstance(raw_text, str) or not raw_text.strip():
+        raise ValueError("Empty response")
+
+    text = raw_text.strip()
+    # Some models wrap JSON in ```json ... ``` - remove that wrapper if present
+    if text.startswith("```"):
+        text = text.strip("`")
+        if text.lower().startswith("json"):
+            text = text[4:]
+
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError as error:
+        raise ValueError("Response is not valid JSON") from error
+    if not isinstance(data, dict):
+        raise ValueError("Expected a JSON object")
+    return data
