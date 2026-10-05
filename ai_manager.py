@@ -301,3 +301,61 @@ def validate_ai_response(data, has_claim):
         raise ValueError("A claim was supplied, so claim_status cannot be NO_CLAIM")
 
     return {field: data[field] for field in REQUIRED_FIELDS}
+
+
+# ===========================================================================
+# STEP 6: the ONE function main.py calls
+# ===========================================================================
+
+def _failure(error_code):
+    """Build the standard failure envelope."""
+    return {"ok": False, "ai_analysis": None, "error_code": error_code, "provider": None}
+
+
+def analyse_product(product, profile):
+    """Send one product through the AI and return a status envelope:
+
+      success: {"ok": True,  "ai_analysis": {...6 fields...}, "error_code": None, "provider": "gemini"}
+      failure: {"ok": False, "ai_analysis": None, "error_code": "API_UNAVAILABLE", "provider": None}
+
+    Order: Gemini (up to 2 attempts) -> Groq (up to 2 attempts) -> give up.
+    It never raises and never crashes the program."""
+    providers = get_providers()
+    if not providers:
+        logger.error("No API key found. Set GEMINI_API_KEY and/or GROQ_API_KEY in .env")
+        return _failure("CONFIGURATION_ERROR")
+
+    claim = product["marketing_claim"]
+    has_claim = isinstance(claim, str) and bool(claim.strip())
+    base_prompt = build_prompt(build_ai_payload(product, profile))
+    last_error = "API_UNAVAILABLE"
+
+    for provider in providers:
+        prompt = base_prompt
+        for attempt in range(1, MAX_ATTEMPTS_PER_PROVIDER + 1):
+            raw_text, error = provider["call"](prompt, provider["api_key"], provider["model"])
+
+            if error is None:
+                try:
+                    data = parse_ai_response(raw_text)
+                    ai_analysis = validate_ai_response(data, has_claim)
+                    return {"ok": True, "ai_analysis": ai_analysis,
+                            "error_code": None, "provider": provider["name"]}
+                except ValueError as problem:
+                    # Malformed output: retry once, telling the model what was wrong
+                    error = "INVALID_RESPONSE"
+                    logger.warning("%s attempt %d invalid output: %s",
+                                   provider["name"], attempt, problem)
+                    prompt = (base_prompt + "\n\nYour previous reply was rejected because: "
+                              + str(problem) + ". Reply again with ONLY the corrected JSON object.")
+            else:
+                logger.warning("%s attempt %d failed: %s", provider["name"], attempt, error)
+
+            last_error = error
+            if error in NON_RETRYABLE_ERRORS:
+                break                     # wrong key/model: skip to the backup provider
+            if error == "API_UNAVAILABLE":
+                time.sleep(1)             # brief pause before retrying a busy server
+
+    logger.error("All AI providers failed. Last error: %s", last_error)
+    return _failure(last_error)
