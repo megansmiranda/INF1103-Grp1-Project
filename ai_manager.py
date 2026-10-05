@@ -203,3 +203,29 @@ def call_gemini(prompt, api_key, model):
     except (KeyError, IndexError, TypeError):
         logger.warning("Gemini reply had an unexpected shape")
         return None, "INVALID_RESPONSE"
+
+
+def call_groq(prompt, api_key, model):
+    """Ask Groq (backup provider, OpenAI-style API). Returns (raw_text, None) or (None, error_code)."""
+    body = {
+        "model": model,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0,
+        "response_format": {"type": "json_object"},   # ask for pure JSON
+        "reasoning_effort": "low",                     # keeps token usage small
+        "max_completion_tokens": 2048,
+    }
+    response, error = _post_json(GROQ_URL, {"Authorization": "Bearer " + api_key}, body)
+    if error:
+        return None, error
+
+    # Groq wraps the text like: choices[0].message.content
+    try:
+        choice = response["choices"][0]
+        if choice.get("finish_reason") not in (None, "stop"):
+            logger.warning("Groq stopped early: %s", choice.get("finish_reason"))
+            return None, "INVALID_RESPONSE"
+        return choice["message"]["content"], None
+    except (KeyError, IndexError, TypeError):
+        logger.warning("Groq reply had an unexpected shape")
+        return None, "INVALID_RESPONSE"
