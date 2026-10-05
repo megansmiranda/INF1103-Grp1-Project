@@ -144,3 +144,62 @@ def build_prompt(payload):
     """Combine the fixed instructions with the product data (as JSON text)."""
     label_json = json.dumps(payload, ensure_ascii=False, allow_nan=False, indent=2)
     return PROMPT_INSTRUCTIONS + "\n\nLABEL_DATA_JSON:\n" + label_json
+
+
+# ===========================================================================
+# STEP 3: call the API (all provider-specific code lives here)
+# ===========================================================================
+
+def _post_json(url, headers, body):
+    """Send a POST request with a JSON body.
+    Returns (response_dict, None) on success or (None, error_code) on failure."""
+    data = json.dumps(body).encode("utf-8")
+    headers = dict(headers)
+    headers["Content-Type"] = "application/json"
+    headers["User-Agent"] = "NutriLenz/1.0"
+    request = urllib.request.Request(url, data=data, headers=headers, method="POST")
+
+    try:
+        with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
+            return json.loads(response.read().decode("utf-8")), None
+    except urllib.error.HTTPError as error:
+        # The server answered, but with an error status code
+        logger.warning("HTTP %s from %s", error.code, url.split("?")[0])
+        if error.code in (401, 403):
+            return None, "AUTHENTICATION_ERROR"
+        if error.code in (400, 404):
+            return None, "CONFIGURATION_ERROR"      # e.g. wrong model name
+        return None, "API_UNAVAILABLE"               # 429 rate limit, 5xx server errors
+    except (urllib.error.URLError, TimeoutError, OSError) as error:
+        # No answer at all: no internet, DNS failure, timeout
+        logger.warning("Connection problem: %s", error)
+        return None, "API_CONNECTION_ERROR"
+    except json.JSONDecodeError:
+        return None, "INVALID_RESPONSE"
+
+
+def call_gemini(prompt, api_key, model):
+    """Ask Google Gemini. Returns (raw_text, None) or (None, error_code)."""
+    body = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0,                         # same input -> same answer
+            "responseMimeType": "application/json",   # ask for pure JSON
+            "maxOutputTokens": 2048,
+        },
+    }
+    response, error = _post_json(GEMINI_URL.format(model=model),
+                                 {"x-goog-api-key": api_key}, body)
+    if error:
+        return None, error
+
+    # Gemini wraps the text like: candidates[0].content.parts[0].text
+    try:
+        candidate = response["candidates"][0]
+        if candidate.get("finishReason") not in (None, "STOP"):
+            logger.warning("Gemini stopped early: %s", candidate.get("finishReason"))
+            return None, "INVALID_RESPONSE"
+        return candidate["content"]["parts"][0]["text"], None
+    except (KeyError, IndexError, TypeError):
+        logger.warning("Gemini reply had an unexpected shape")
+        return None, "INVALID_RESPONSE"
