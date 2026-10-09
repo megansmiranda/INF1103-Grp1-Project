@@ -85,9 +85,14 @@ def read_choice(prompt, allowed_choices, allow_quit=False):
 
 
 def read_yes_no(prompt):
-    """Ask a Y/N question. Returns True for Y, False for N."""
-    answer = read_choice(prompt, ["Y", "N", "y", "n"])
-    return answer.upper() == "Y"
+    """Ask a yes/no question. Returns True for yes, False for no."""
+    while True:
+        answer = input(prompt).strip().casefold()
+        if answer in ("y", "yes"):
+            return True
+        if answer in ("n", "no"):
+            return False
+        print("  Invalid choice. Please enter Y/Yes or N/No.")
 
 
 def read_number(prompt, allow_missing=False, allow_zero=False, max_value=None, allow_quit=False):
@@ -245,7 +250,7 @@ def update_profile(profile):
     print("\n--- UPDATE PROFILE: {} ---".format(profile["profile_name"]))
     print("Current goal  : " + GOAL_INFO[profile["primary_goal"]]["label"])
     print("Current target: " + describe_target(profile))
-    if not read_yes_no("Continue update? (Y/N): "):
+    if not read_yes_no("Continue update? (Y/Yes or N/No): "):
         return None
 
     goal, target, unit = _ask_goal_and_target()
@@ -265,7 +270,7 @@ def confirm_delete_profile(profile, analysis_count):
     print("Profile: {} | {}".format(profile["profile_name"], describe_target(profile)))
     print("This will also permanently delete {} saved analys{}.".format(
         analysis_count, "is" if analysis_count == 1 else "es"))
-    return read_yes_no("Delete the current profile? This cannot be undone. (Y/N): ")
+    return read_yes_no("Delete the current profile? This cannot be undone. (Y/Yes or N/No): ")
 
 
 # ===========================================================================
@@ -319,14 +324,14 @@ def collect_product_name(profile):
 def confirm_repeat_analysis(product_name, previous_count):
     """Ask whether to continue after a product reaches the repeat-analysis threshold."""
     prompt = ("You have analysed {} {} times with this profile.\n"
-              "Would you like to analyse it again? (Y/N): ").format(
+              "Would you like to analyse it again? (Y/Yes or N/No): ").format(
                   product_name, previous_count)
     return read_yes_no(prompt)
 
 
 def collect_product(profile, product_name):
     """Ask for one product label. Returns a product dictionary,
-    or None if the user says N at the confirmation step."""
+    or None if the user answers no at the confirmation step."""
     print("Enter nutrition values PER SERVING. Press Enter if a value is not on the label.")
 
     brand = read_optional_text("Brand (optional): ")
@@ -352,7 +357,7 @@ def collect_product(profile, product_name):
 
 
 def confirm_product(product, profile):
-    """Show a summary of what was typed and ask Y/N. Returns True or False."""
+    """Show a summary of what was typed and ask yes/no. Returns True or False."""
     n = product["nutrition"]
     print("\n--- PLEASE CONFIRM ---")
     print("Profile: {} | {}".format(profile["profile_name"], describe_target(profile)))
@@ -365,7 +370,7 @@ def confirm_product(product, profile):
     print("Marketing claim: " + (product["marketing_claim"] or "None"))
     avoid = profile["avoid_ingredients"]
     print("Ingredients to avoid: " + (", ".join(avoid) if avoid else "No avoidance preferences entered"))
-    return read_yes_no("Analyse this product? (Y/N): ")
+    return read_yes_no("Analyse this product? (Y/Yes or N/No): ")
 
 
 # ===========================================================================
@@ -478,4 +483,4 @@ def show_history(records, active_profile):
 
 def confirm_delete_analysis(record):
     """Ask for explicit confirmation before deleting a saved analysis."""
-    return read_yes_no("Delete the analysis for {}? (Y/N): ".format(record["product_name"]))
+    return read_yes_no("Delete the analysis for {}? (Y/Yes or N/No): ".format(record["product_name"]))

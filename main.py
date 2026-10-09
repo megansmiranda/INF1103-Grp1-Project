@@ -109,7 +109,7 @@ def save_with_retry(record):
             return
         io_manager.show_message("Analysis completed, but it could not be saved. "
                                 + error_text(saved["error_code"]))
-        if not io_manager.read_yes_no("Retry saving this result? (Y/N): "):
+        if not io_manager.read_yes_no("Retry saving this result? (Y/Yes or N/No): "):
             io_manager.show_message("The result was NOT saved.")
             return
 
@@ -138,7 +138,7 @@ def handle_analyse(active_profile):
     if warnings:
         for warning in warnings:
             io_manager.show_message("Warning: " + warning)
-        if not io_manager.read_yes_no("Analyse with these values anyway? (Y/N): "):
+        if not io_manager.read_yes_no("Analyse with these values anyway? (Y/Yes or N/No): "):
             io_manager.show_message("Cancelled. Nothing was sent to the AI.")
             return active_profile
 
@@ -260,8 +260,11 @@ def main():
     while True:
         choice = io_manager.show_main_menu(active_profile)
         if choice == "0":
-            io_manager.show_message("Goodbye.")
-            break
+            if io_manager.read_yes_no("Are you sure you want to leave NutriLenz? (Y/Yes or N/No): "):
+                io_manager.show_message("Thank you for using NutriLenz. Goodbye!")
+                break
+            io_manager.show_message("Exit cancelled.")
+            continue
         if choice in NEEDS_PROFILE and active_profile is None:
             io_manager.show_message("Please create or select a profile first.")
             continue
