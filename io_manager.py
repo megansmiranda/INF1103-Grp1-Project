@@ -373,7 +373,7 @@ def show_analysis(record):
     if record.get("analysed_at"):
         print("Analysed on  : " + record["analysed_at"])
     print("Profile used : {} | {}".format(snap["profile_name"], info["label"]))
-#    print("Target used  : " + describe_target(snap))
+    print("Target used  : " + describe_target(snap))
     print("Nutrition    : Sugar {} | Protein {} | Sodium {} (per serving)".format(
         _fmt(n["sugar_g"], "g"), _fmt(n["protein_g"], "g"), _fmt(n["sodium_mg"], "mg")))
     print("Claim        : " + (record["marketing_claim"] or "None"))
