@@ -85,9 +85,14 @@ def read_choice(prompt, allowed_choices, allow_quit=False):
 
 
 def read_yes_no(prompt):
-    """Ask a Y/N question. Returns True for Y, False for N."""
-    answer = read_choice(prompt, ["Y", "N", "y", "n"])
-    return answer.upper() == "Y"
+    """Ask a yes/no question. Returns True for yes, False for no."""
+    while True:
+        answer = input(prompt).strip().casefold()
+        if answer in ("y", "yes"):
+            return True
+        if answer in ("n", "no"):
+            return False
+        print("  Invalid choice. Please enter Y/Yes or N/No.")
 
 
 def read_number(prompt, allow_missing=False, allow_zero=False, max_value=None, allow_quit=False):
@@ -182,14 +187,21 @@ def _ask_goal_and_target(allow_quit=False):
     return goal, target, info["unit_code"]
 
 
-def collect_profile():
+def collect_profile(existing_profiles):
     """Ask for a brand new profile. Returns a profile dictionary
-    (NOT saved yet - main.py asks data_manager to save it)."""
+    (NOT saved yet - main.py asks data_manager to save it).
+    Existing profiles are supplied so duplicate names can be rejected immediately."""
     print("\n--- CREATE PROFILE ---")
     print("(Type 'quit' at any question to cancel.)")
-    name = read_required_text("Profile name: ", allow_quit=True)
-    if name is QUIT:
-        return _cancel_profile()
+    while True:
+        name = read_required_text("Profile name: ", allow_quit=True)
+        if name is QUIT:
+            return _cancel_profile()
+        if any(profile["profile_name"].strip().casefold() == name.casefold()
+               for profile in existing_profiles):
+            print("  A profile with that name already exists. Please enter a different name.")
+            continue
+        break
     result = _ask_goal_and_target(allow_quit=True)
     if result is QUIT:
         return _cancel_profile()
@@ -239,24 +251,56 @@ def select_profile(profiles):
 
 
 def update_profile(profile):
-    """Ask for new goal/target/avoid list for the active profile.
+    """Ask for new goal/target and how to handle avoided ingredients.
     Returns a NEW dictionary (the original is not changed), or None if cancelled.
     The profile name stays the same so saved history still matches."""
     print("\n--- UPDATE PROFILE: {} ---".format(profile["profile_name"]))
     print("Current goal  : " + GOAL_INFO[profile["primary_goal"]]["label"])
     print("Current target: " + describe_target(profile))
-    if not read_yes_no("Continue update? (Y/N): "):
+    current_avoid = profile["avoid_ingredients"]
+    if not read_yes_no("Continue update? (Y/Yes or N/No): "):
         return None
 
     goal, target, unit = _ask_goal_and_target()
-    avoid = read_ingredient_list("Ingredients to avoid (comma-separated; type 'none' for none): ")
-    return {
+    print("Current ingredients to avoid: "
+          + (", ".join(current_avoid) if current_avoid else "None"))
+    print("1. Keep current   2. Replace   3. Clear   0. Cancel")
+    choice = read_choice("Choice: ", ["1", "2", "3", "0"])
+    if choice == "0":
+        return None
+    if choice == "1":
+        avoid = list(current_avoid)
+    elif choice == "2":
+        avoid = read_ingredient_list(
+            "Ingredients to avoid (comma-separated; type 'none' for none): ")
+    else:
+        avoid = []
+
+    updated = {
         "profile_name": profile["profile_name"],
         "primary_goal": goal,
         "target_value": target,
         "target_unit": unit,
         "avoid_ingredients": avoid,
     }
+    info = GOAL_INFO[goal]
+    target_summary = "{} {:g} {} per serving".format(
+        info["direction"].capitalize(), target, info["unit"])
+    print("\nReview: {} | {} | {}".format(
+        updated["profile_name"], info["label"], target_summary))
+    print("Ingredients to avoid: " + (", ".join(avoid) if avoid else "None"))
+    if not read_yes_no("Save these changes? Yes/No: "):
+        return None
+    return updated
+
+
+def confirm_delete_profile(profile, analysis_count):
+    """Ask for explicit confirmation before deleting the current profile and its history."""
+    print("\n--- DELETE CURRENT PROFILE ---")
+    print("Profile: {} | {}".format(profile["profile_name"], describe_target(profile)))
+    print("This will also permanently delete {} saved analys{}.".format(
+        analysis_count, "is" if analysis_count == 1 else "es"))
+    return read_yes_no("Delete the current profile? This cannot be undone. (Y/Yes or N/No): ")
 
 
 # ===========================================================================
@@ -266,6 +310,7 @@ def update_profile(profile):
 def show_main_menu(active_profile):
     """Display the main menu once and return the user's choice as a string."""
     name = active_profile["profile_name"] if active_profile else "None"
+    choices = ["0", "1", "2", "3", "4", "5"]
     print("\n" + LINE)
     print(" NutriLenz - AI Food Label Interpreter")
     print(" Active profile: " + name)
@@ -275,8 +320,11 @@ def show_main_menu(active_profile):
     print(" 3. Analyse a product")
     print(" 4. View previous analyses")
     print(" 5. Update active profile")
+    if active_profile is not None:
+        print(" 6. Delete current profile")
+        choices.append("6")
     print(" 0. Exit")
-    return read_choice("Choose: ", ["0", "1", "2", "3", "4", "5"])
+    return read_choice("Choose: ", choices)
 
 
 def show_message(message):
@@ -306,14 +354,14 @@ def collect_product_name(profile):
 def confirm_repeat_analysis(product_name, previous_count):
     """Ask whether to continue after a product reaches the repeat-analysis threshold."""
     prompt = ("You have analysed {} {} times with this profile.\n"
-              "Would you like to analyse it again? (Y/N): ").format(
+              "Would you like to analyse it again? (Y/Yes or N/No): ").format(
                   product_name, previous_count)
     return read_yes_no(prompt)
 
 
 def collect_product(profile, product_name):
     """Ask for one product label. Returns a product dictionary,
-    or None if the user says N at the confirmation step."""
+    or None if the user answers no at the confirmation step."""
     print("Enter nutrition values PER SERVING. Press Enter if a value is not on the label.")
 
     brand = read_optional_text("Brand (optional): ")
@@ -339,7 +387,7 @@ def collect_product(profile, product_name):
 
 
 def confirm_product(product, profile):
-    """Show a summary of what was typed and ask Y/N. Returns True or False."""
+    """Show a summary of what was typed and ask yes/no. Returns True or False."""
     n = product["nutrition"]
     print("\n--- PLEASE CONFIRM ---")
     print("Profile: {} | {}".format(profile["profile_name"], describe_target(profile)))
@@ -352,7 +400,7 @@ def confirm_product(product, profile):
     print("Marketing claim: " + (product["marketing_claim"] or "None"))
     avoid = profile["avoid_ingredients"]
     print("Ingredients to avoid: " + (", ".join(avoid) if avoid else "No avoidance preferences entered"))
-    return read_yes_no("Analyse this product? (Y/N): ")
+    return read_yes_no("Analyse this product? (Y/Yes or N/No): ")
 
 
 # ===========================================================================
@@ -465,4 +513,4 @@ def show_history(records, active_profile):
 
 def confirm_delete_analysis(record):
     """Ask for explicit confirmation before deleting a saved analysis."""
-    return read_yes_no("Delete the analysis for {}? (Y/N): ".format(record["product_name"]))
+    return read_yes_no("Delete the analysis for {}? (Y/Yes or N/No): ".format(record["product_name"]))

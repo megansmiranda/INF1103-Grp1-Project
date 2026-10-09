@@ -122,6 +122,35 @@ def save_profile(profile, data_dir, create=True):
     return _ok(profiles)
 
 
+def delete_profile(profile_name, data_dir):
+    """Remove a profile AND all of its saved analyses.
+    Both files are loaded and checked first, so a damaged file is never overwritten."""
+    loaded = load_profiles(data_dir)
+    if not loaded["ok"]:
+        return loaded
+    history = load_history(data_dir)
+    if not history["ok"]:
+        return history
+
+    profiles = loaded["data"]
+    remaining = [p for p in profiles if not _same_name(p["profile_name"], profile_name)]
+    if len(remaining) == len(profiles):
+        return _fail("PROFILE_NOT_FOUND")
+
+    records = history["data"]
+    kept = [r for r in records
+            if not _same_name(r["profile_snapshot"]["profile_name"], profile_name)]
+
+    # Analyses first: if the second write fails, the user still has the profile
+    # and can simply try again (rather than ending up with orphaned history).
+    if len(kept) != len(records):
+        if not _write_list(Path(data_dir) / ANALYSES_FILE, kept):
+            return _fail("WRITE_ERROR")
+    if not _write_list(Path(data_dir) / PROFILES_FILE, remaining):
+        return _fail("WRITE_ERROR")
+    return _ok(remaining)
+
+
 # ===========================================================================
 # Analyses (history)
 # ===========================================================================

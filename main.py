@@ -65,7 +65,12 @@ def setup_logging():
 # ===========================================================================
 
 def handle_create_profile(active_profile):
-    profile = io_manager.collect_profile()
+    loaded = data_manager.load_profiles(DATA_DIR)
+    if not loaded["ok"]:
+        io_manager.show_message("Saved profiles could not be loaded. "
+                                + error_text(loaded["error_code"]))
+        return active_profile
+    profile = io_manager.collect_profile(loaded["data"])
     if profile is None:                    # user typed quit: nothing is saved
         return active_profile
     result = data_manager.save_profile(profile, DATA_DIR, create=True)
@@ -109,7 +114,7 @@ def save_with_retry(record):
             return
         io_manager.show_message("Analysis completed, but it could not be saved. "
                                 + error_text(saved["error_code"]))
-        if not io_manager.read_yes_no("Retry saving this result? (Y/N): "):
+        if not io_manager.read_yes_no("Retry saving this result? (Y/Yes or N/No): "):
             io_manager.show_message("The result was NOT saved.")
             return
 
@@ -138,7 +143,7 @@ def handle_analyse(active_profile):
     if warnings:
         for warning in warnings:
             io_manager.show_message("Warning: " + warning)
-        if not io_manager.read_yes_no("Analyse with these values anyway? (Y/N): "):
+        if not io_manager.read_yes_no("Analyse with these values anyway? (Y/Yes or N/No): "):
             io_manager.show_message("Cancelled. Nothing was sent to the AI.")
             return active_profile
 
@@ -201,11 +206,35 @@ def handle_update_profile(active_profile):
         return active_profile
     result = data_manager.save_profile(updated, DATA_DIR, create=False)
     if result["ok"]:
-        io_manager.show_message("Profile saved. New analyses will use: "
-                                + io_manager.describe_target(updated))
+        io_manager.show_message("Profile updated.")
         return updated                     # only switch to new settings after a successful save
     io_manager.show_message("Profile was not updated. " + error_text(result["error_code"]))
     return active_profile
+
+
+def handle_delete_profile(active_profile):
+    if active_profile is None:
+        io_manager.show_message("Please create or select a profile first.")
+        return active_profile
+
+    history = data_manager.load_history(DATA_DIR)
+    if not history["ok"]:
+        io_manager.show_message("Saved history could not be loaded. " + error_text(history["error_code"]))
+        return active_profile
+    count = len(data_manager.query_history(history["data"], active_profile["profile_name"]))
+
+    if not io_manager.confirm_delete_profile(active_profile, count):
+        io_manager.show_message("Deletion cancelled.")
+        return active_profile
+
+    result = data_manager.delete_profile(active_profile["profile_name"], DATA_DIR)
+    if not result["ok"]:
+        io_manager.show_message("The profile was NOT deleted. " + error_text(result["error_code"]))
+        return active_profile
+
+    io_manager.show_message("Profile deleted: " + active_profile["profile_name"])
+    io_manager.show_message("No active profile. Please create or select one.")
+    return None
 
 
 # Menu choice -> handler function
@@ -215,8 +244,9 @@ MENU_ACTIONS = {
     "3": handle_analyse,
     "4": handle_history,
     "5": handle_update_profile,
+    "6": handle_delete_profile,
 }
-NEEDS_PROFILE = ("3", "4", "5")
+NEEDS_PROFILE = ("3", "4", "5", "6")
 
 
 def main():
@@ -234,8 +264,11 @@ def main():
     while True:
         choice = io_manager.show_main_menu(active_profile)
         if choice == "0":
-            io_manager.show_message("Goodbye.")
-            break
+            if io_manager.read_yes_no("Are you sure you want to leave NutriLenz? (Y/Yes or N/No): "):
+                io_manager.show_message("Thank you for using NutriLenz. Goodbye!")
+                break
+            io_manager.show_message("Exit cancelled.")
+            continue
         if choice in NEEDS_PROFILE and active_profile is None:
             io_manager.show_message("Please create or select a profile first.")
             continue
