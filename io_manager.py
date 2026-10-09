@@ -260,12 +260,12 @@ def update_profile(profile):
 
 
 def confirm_delete_profile(profile, analysis_count):
-    """Ask for explicit confirmation before deleting a profile and its history."""
-    print("\n--- DELETE PROFILE ---")
+    """Ask for explicit confirmation before deleting the current profile and its history."""
+    print("\n--- DELETE CURRENT PROFILE ---")
     print("Profile: {} | {}".format(profile["profile_name"], describe_target(profile)))
     print("This will also permanently delete {} saved analys{}.".format(
         analysis_count, "is" if analysis_count == 1 else "es"))
-    return read_yes_no("Delete this profile? This cannot be undone. (Y/N): ")
+    return read_yes_no("Delete the current profile? This cannot be undone. (Y/N): ")
 
 
 # ===========================================================================
@@ -275,6 +275,7 @@ def confirm_delete_profile(profile, analysis_count):
 def show_main_menu(active_profile):
     """Display the main menu once and return the user's choice as a string."""
     name = active_profile["profile_name"] if active_profile else "None"
+    choices = ["0", "1", "2", "3", "4", "5"]
     print("\n" + LINE)
     print(" NutriLenz - AI Food Label Interpreter")
     print(" Active profile: " + name)
@@ -284,9 +285,11 @@ def show_main_menu(active_profile):
     print(" 3. Analyse a product")
     print(" 4. View previous analyses")
     print(" 5. Update active profile")
-    print(" 6. Delete a profile")
+    if active_profile is not None:
+        print(" 6. Delete current profile")
+        choices.append("6")
     print(" 0. Exit")
-    return read_choice("Choose: ", ["0", "1", "2", "3", "4", "5", "6"])
+    return read_choice("Choose: ", choices)
 
 
 def show_message(message):

@@ -209,37 +209,28 @@ def handle_update_profile(active_profile):
 
 
 def handle_delete_profile(active_profile):
-    loaded = data_manager.load_profiles(DATA_DIR)
-    if not loaded["ok"]:
-        io_manager.show_message(error_text(loaded["error_code"]))
-        return active_profile
-    chosen = io_manager.select_profile(loaded["data"])
-    if chosen is None:                     # Back, or no profiles saved
+    if active_profile is None:
+        io_manager.show_message("Please create or select a profile first.")
         return active_profile
 
     history = data_manager.load_history(DATA_DIR)
     if not history["ok"]:
         io_manager.show_message("Saved history could not be loaded. " + error_text(history["error_code"]))
         return active_profile
-    count = len(data_manager.query_history(history["data"], chosen["profile_name"]))
+    count = len(data_manager.query_history(history["data"], active_profile["profile_name"]))
 
-    if not io_manager.confirm_delete_profile(chosen, count):
+    if not io_manager.confirm_delete_profile(active_profile, count):
         io_manager.show_message("Deletion cancelled.")
         return active_profile
 
-    result = data_manager.delete_profile(chosen["profile_name"], DATA_DIR)
+    result = data_manager.delete_profile(active_profile["profile_name"], DATA_DIR)
     if not result["ok"]:
         io_manager.show_message("The profile was NOT deleted. " + error_text(result["error_code"]))
         return active_profile
 
-    io_manager.show_message("Profile deleted: " + chosen["profile_name"])
-    # If the deleted profile was the active one, there is no active profile any more
-    if (active_profile is not None and
-            active_profile["profile_name"].strip().casefold()
-            == chosen["profile_name"].strip().casefold()):
-        io_manager.show_message("No active profile. Please create or select one.")
-        return None
-    return active_profile
+    io_manager.show_message("Profile deleted: " + active_profile["profile_name"])
+    io_manager.show_message("No active profile. Please create or select one.")
+    return None
 
 
 # Menu choice -> handler function
@@ -251,7 +242,7 @@ MENU_ACTIONS = {
     "5": handle_update_profile,
     "6": handle_delete_profile,
 }
-NEEDS_PROFILE = ("3", "4", "5")
+NEEDS_PROFILE = ("3", "4", "5", "6")
 
 
 def main():
