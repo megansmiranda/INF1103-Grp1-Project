@@ -1,21 +1,3 @@
-"""
-ai_manager.py - AI PROCESSING LAYER  (owner: AI Manager)
-
-Every product analysis passes through here. This file:
-  1. Builds a prompt from the product + profile          (build_ai_payload, build_prompt)
-  2. Calls the AI API (Gemini first, Groq as backup)     (call_gemini, call_groq)
-  3. Parses the reply as JSON                            (parse_ai_response)
-  4. Validates the JSON schema and allowed values        (validate_ai_response)
-  5. Retries on bad output, and fails gracefully         (analyse_product)
-
-Rules we follow (from the school spec):
-  - ZERO domain logic here: no target comparisons, no flags. Logic Manager does that.
-  - No printing or keyboard input: problems are LOGGED and returned as an error envelope.
-  - No classes: only functions.
-
-Only the Python standard library is used (urllib), so nothing needs pip install.
-"""
-
 import json
 import logging
 import os
