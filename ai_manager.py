@@ -1,3 +1,4 @@
+import http.client
 import json
 import logging
 import os
@@ -150,7 +151,11 @@ def _post_json(url, headers, body):
 
     try:
         with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
-            return json.loads(response.read().decode("utf-8")), None
+            reply = json.loads(response.read().decode("utf-8"))
+        if not isinstance(reply, dict):
+            logger.warning("Reply from %s was not a JSON object", url.split("?")[0])
+            return None, "INVALID_RESPONSE"
+        return reply, None
     except urllib.error.HTTPError as error:
         # The server answered, but with an error status code
         logger.warning("HTTP %s from %s", error.code, url.split("?")[0])
@@ -159,11 +164,13 @@ def _post_json(url, headers, body):
         if error.code in (400, 404):
             return None, "CONFIGURATION_ERROR"      # e.g. wrong model name
         return None, "API_UNAVAILABLE"               # 429 rate limit, 5xx server errors
-    except (urllib.error.URLError, TimeoutError, OSError) as error:
-        # No answer at all: no internet, DNS failure, timeout
-        logger.warning("Connection problem: %s", error)
+    except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException) as error:
+        # No answer, or the answer was cut off: no internet, DNS failure, timeout, dropped download
+        logger.warning("Connection problem: %r", error)
         return None, "API_CONNECTION_ERROR"
-    except json.JSONDecodeError:
+    except ValueError as error:
+        # Reply arrived but is unreadable: bad UTF-8 or not JSON
+        logger.warning("Unreadable reply from %s: %s", url.split("?")[0], type(error).__name__)
         return None, "INVALID_RESPONSE"
 
 

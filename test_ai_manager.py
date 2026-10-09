@@ -1,3 +1,5 @@
+import http.client
+import io
 import json
 import logging
 import os
@@ -126,6 +128,38 @@ def test_validate_rejects_bad_responses():
 
 
 # ---------------------------------------------------------------------------
+# Broken API replies, using a FAKE urlopen (no internet)
+# ---------------------------------------------------------------------------
+
+def post_with_fake_reply(body):
+    """Run _post_json with urlopen replaced by a fake.
+    body is the reply bytes, or an exception to raise as if the download failed."""
+    def fake_urlopen(request, timeout):
+        if isinstance(body, Exception):
+            raise body
+        return io.BytesIO(body)      # behaves like a reply: supports 'with' and read()
+
+    original = ai_manager.urllib.request.urlopen
+    ai_manager.urllib.request.urlopen = fake_urlopen
+    try:
+        return ai_manager._post_json("https://example.test", {}, {})
+    finally:
+        ai_manager.urllib.request.urlopen = original
+
+
+def test_cut_off_download_is_connection_error():
+    cut_off = http.client.IncompleteRead(b'{"candidates": [', 500)
+    assert post_with_fake_reply(cut_off) == (None, "API_CONNECTION_ERROR")
+
+
+def test_unreadable_or_wrong_shape_reply_is_invalid_response():
+    assert post_with_fake_reply(b"\xff\xfe not utf-8") == (None, "INVALID_RESPONSE")
+    assert post_with_fake_reply(b"<html>Bad Gateway</html>") == (None, "INVALID_RESPONSE")
+    assert post_with_fake_reply(b"[1, 2, 3]") == (None, "INVALID_RESPONSE")
+    assert post_with_fake_reply(b'{"ok": 1}') == ({"ok": 1}, None)
+
+
+# ---------------------------------------------------------------------------
 # Retry + fallback logic, using FAKE providers (no internet)
 # ---------------------------------------------------------------------------
 
@@ -192,6 +226,8 @@ def run_offline_tests():
         test_parse_rejects_bad_text,
         test_validate_accepts_good_response,
         test_validate_rejects_bad_responses,
+        test_cut_off_download_is_connection_error,
+        test_unreadable_or_wrong_shape_reply_is_invalid_response,
         test_retry_once_after_invalid_output,
         test_gives_up_after_two_bad_answers,
         test_falls_back_to_groq_when_gemini_key_rejected,
