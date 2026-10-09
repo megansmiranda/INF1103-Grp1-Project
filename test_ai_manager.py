@@ -1,13 +1,3 @@
-"""
-test_ai_manager.py - tests for the AI Manager
-
-  python test_ai_manager.py            -> OFFLINE tests (no internet, no API key needed)
-  python test_ai_manager.py live       -> sends the hardcoded sample products to the REAL API
-  python test_ai_manager.py live groq  -> same, but skips Gemini to test the Groq backup
-
-Uses the hardcoded data in sample_data.py, so io_manager does not need to be finished.
-"""
-
 import json
 import logging
 import os
