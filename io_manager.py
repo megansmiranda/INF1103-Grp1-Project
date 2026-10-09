@@ -386,3 +386,51 @@ def show_analysis(record):
     print(textwrap.fill(ai["explanation"], width=70, initial_indent="    ",
                         subsequent_indent="    "))
     print(LINE)
+
+# ===========================================================================
+# PERSON B - B4: history list (summary view)
+# ===========================================================================
+
+def show_history(records, active_profile):
+    """LIST VIEW: show past analyses for this profile.
+    Returns (action, record), or ("back", None) for Back / no records."""
+    if not records:
+        print("No previous analyses for this profile.")
+        return "back", None
+
+    print("\n--- PREVIOUS ANALYSES | {} ---".format(active_profile["profile_name"]))
+    for number, record in enumerate(records, start=1):
+        brand = record["brand"] or "Not provided"
+        timestamp = record.get("analysed_at")
+        if timestamp:
+            try:
+                analysed_at = datetime.fromisoformat(timestamp)
+            except (TypeError, ValueError):
+                analysed_at = None
+            if analysed_at is not None:
+                date_format = "%d %b %Y %H:%M"
+                if analysed_at.second or analysed_at.microsecond:
+                    date_format += ":%S"
+                timestamp = analysed_at.strftime(date_format)
+                if analysed_at.utcoffset() is not None:
+                    offset = analysed_at.strftime("%z")
+                    timestamp += " {}:{}".format(offset[:3], offset[3:])
+        else:
+            timestamp = "Date unavailable"
+
+        goal = GOAL_INFO[record["profile_snapshot"]["primary_goal"]]["label"]
+        flags = ", ".join(
+            FLAG_DESCRIPTIONS.get(flag, flag.replace("_", " ").title())
+            for flag in record["flags"]
+        ) or "No flags"
+        print("{}. {} | {} | {}".format(
+            number, record["product_name"], brand, timestamp))
+        print("   {} | {}".format(goal, flags))
+    print("0. Back")
+    print("D. Delete an analysis")
+
+    allowed = [str(n) for n in range(0, len(records) + 1)]
+    choice = read_choice("Select an analysis or choose an option: ", allowed + ["D", "d"])
+    if choice == "0":
+        return "back", None
+    return "view", records[int(choice) - 1]
