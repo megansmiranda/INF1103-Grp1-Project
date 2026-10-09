@@ -1,13 +1,14 @@
 """
-logic_manager.py - LOGIC LAYER (owner: Logic Person A)
+logic_manager.py - LOGIC LAYER (owners: Logic Person A and Person B)
 
 Map goals, compare the selected nutrient and check unusual nutrition values.
 evaluate_target() returns MET, MISMATCH or MISSING without inspecting AI output.
 Invalid internal data raises ValueError with a reason for main.py to pass to I/O.
 Unusual-value warnings use team-agreed limits supplied by the caller.
 
-Person B's review rules and evaluate_product() must be added during team
-integration before the full application can produce final analysis flags.
+Person B checks the validated AI fields and combines the results into final
+flags: GOAL_MISMATCH, CLAIM_REVIEW, MANUAL_REVIEW or GOOD_MATCH.
+Numeric mismatch is independent of AI alignment. Review blocks GOOD_MATCH.
 No printing, keyboard input, API calls or file access here.
 """
 
@@ -148,3 +149,72 @@ def check_unusual_numbers(product, warning_limits=None):
                 + "values; correct or confirm the label value."
             )
     return warnings
+
+
+# ===========================================================================
+# PERSON B: review rules using the validated AI analysis
+# ===========================================================================
+
+def needs_manual_review(target_status, ai_analysis):
+    """Return True when missing data or uncertain AI output requires review.
+
+    NO_CLAIM alone is not a review reason. main.py handles API failures before
+    calling Logic; ai_analysis is the validated inner dictionary, not a wrapper.
+    """
+    return (target_status == "MISSING"
+            or ai_analysis["confidence"] == "LOW"
+            or ai_analysis["goal_alignment"] == "INSUFFICIENT_INFORMATION"
+            or ai_analysis["claim_status"] == "INSUFFICIENT_INFORMATION")
+
+
+def needs_claim_review(product, ai_analysis):
+    """Review a supplied questionable claim only at MEDIUM/HIGH confidence.
+
+    All three conditions must hold. LOW confidence leads to manual review
+    through needs_manual_review(), rather than triggering claim review.
+    """
+    claim = product["marketing_claim"]
+    has_claim = isinstance(claim, str) and bool(claim.strip())
+    return (has_claim
+            and ai_analysis["claim_status"] == "QUESTIONABLE"
+            and ai_analysis["confidence"] in ("MEDIUM", "HIGH"))
+
+
+def is_good_match(target_status, manual, claim_review, ai_analysis):
+    """Require a met target, favourable AI fields and no review conditions.
+
+    This concerns the selected nutritional goal. It does not certify overall
+    health, safety or satisfaction of every avoidance preference.
+    """
+    return (target_status == "MET"
+            and not manual
+            and not claim_review
+            and ai_analysis["goal_alignment"] == "ALIGNED"
+            and ai_analysis["claim_status"] in ("CONSISTENT", "NO_CLAIM"))
+
+
+# ===========================================================================
+# PERSON B: combine Person A's numeric result and the review rules for main.py
+# ===========================================================================
+
+def evaluate_product(product, profile, ai_analysis):
+    """Return final flags in a fixed order, without changing any input.
+
+    Independent concerns can coexist: GOAL_MISMATCH, CLAIM_REVIEW, MANUAL_REVIEW.
+    GOOD_MATCH is issued only when no other flag applies and the AI fields agree.
+    An empty list means no positive match was issued; consult the interpretation.
+    """
+    target_status = evaluate_target(product, profile)
+    manual = needs_manual_review(target_status, ai_analysis)
+    claim_review = needs_claim_review(product, ai_analysis)
+
+    flags = []
+    if target_status == "MISMATCH":
+        flags.append("GOAL_MISMATCH")
+    if claim_review:
+        flags.append("CLAIM_REVIEW")
+    if manual:
+        flags.append("MANUAL_REVIEW")
+    if is_good_match(target_status, manual, claim_review, ai_analysis):
+        flags.append("GOOD_MATCH")
+    return flags
