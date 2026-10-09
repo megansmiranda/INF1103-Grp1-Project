@@ -259,6 +259,15 @@ def update_profile(profile):
     }
 
 
+def confirm_delete_profile(profile, analysis_count):
+    """Ask for explicit confirmation before deleting a profile and its history."""
+    print("\n--- DELETE PROFILE ---")
+    print("Profile: {} | {}".format(profile["profile_name"], describe_target(profile)))
+    print("This will also permanently delete {} saved analys{}.".format(
+        analysis_count, "is" if analysis_count == 1 else "es"))
+    return read_yes_no("Delete this profile? This cannot be undone. (Y/N): ")
+
+
 # ===========================================================================
 # PERSON A - A5: menu and messages
 # ===========================================================================
@@ -275,8 +284,9 @@ def show_main_menu(active_profile):
     print(" 3. Analyse a product")
     print(" 4. View previous analyses")
     print(" 5. Update active profile")
+    print(" 6. Delete a profile")
     print(" 0. Exit")
-    return read_choice("Choose: ", ["0", "1", "2", "3", "4", "5"])
+    return read_choice("Choose: ", ["0", "1", "2", "3", "4", "5", "6"])
 
 
 def show_message(message):
