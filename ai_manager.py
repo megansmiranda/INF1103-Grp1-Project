@@ -39,7 +39,14 @@ def load_env_file(path=None):
     env_path = Path(path) if path else Path(__file__).resolve().parent / ".env"
     if not env_path.exists():
         return
-    for line in env_path.read_text(encoding="utf-8").splitlines():
+    try:
+        text = env_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as error:
+        # A damaged .env must not crash the import; analyse_product reports
+        # CONFIGURATION_ERROR later if no API key could be found.
+        logger.error("Could not read %s: %s", env_path.name, type(error).__name__)
+        return
+    for line in text.splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue

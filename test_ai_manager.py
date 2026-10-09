@@ -2,7 +2,9 @@ import json
 import logging
 import os
 import sys
+import tempfile
 from copy import deepcopy
+from pathlib import Path
 
 import ai_manager
 from sample_data import (SAMPLE_PROFILES, SAMPLE_PRODUCTS, RAW_VALID, RAW_FENCED,
@@ -29,6 +31,17 @@ def expect_value_error(function, *args):
     except ValueError:
         return
     raise AssertionError(function.__name__ + " should have raised ValueError")
+
+
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
+
+def test_damaged_env_file_does_not_crash():
+    with tempfile.TemporaryDirectory() as folder:
+        env_path = Path(folder) / ".env"
+        env_path.write_bytes(b"\xff\xfe\x00GEMINI_API_KEY=abc")   # not valid UTF-8
+        ai_manager.load_env_file(env_path)                         # must not raise
 
 
 # ---------------------------------------------------------------------------
@@ -171,6 +184,7 @@ def test_no_api_keys_is_configuration_error():
 
 def run_offline_tests():
     tests = [
+        test_damaged_env_file_does_not_crash,
         test_payload_has_no_target_and_does_not_change_inputs,
         test_prompt_contains_label_data,
         test_missing_value_sent_as_null,
