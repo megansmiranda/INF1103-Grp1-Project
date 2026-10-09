@@ -296,6 +296,21 @@ def _fmt(value, unit):
     return "{:g} {}".format(value, unit)
 
 
+def collect_product_name(profile):
+    """Ask for the product name before collecting the rest of its label."""
+    print("\n--- ANALYSE A PRODUCT ---")
+    print("Profile: {} | {}".format(profile["profile_name"], describe_target(profile)))
+    return read_required_text("Product name: ")
+
+
+def confirm_repeat_analysis(product_name, previous_count):
+    """Ask whether to continue after a product reaches the repeat-analysis threshold."""
+    prompt = ("You have analysed {} {} times with this profile.\n"
+              "Would you like to analyse it again? (Y/N): ").format(
+                  product_name, previous_count)
+    return read_yes_no(prompt)
+
+
 def collect_product(profile, product_name):
     """Ask for one product label. Returns a product dictionary,
     or None if the user says N at the confirmation step."""
