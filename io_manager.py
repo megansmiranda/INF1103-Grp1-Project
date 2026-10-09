@@ -433,4 +433,18 @@ def show_history(records, active_profile):
     choice = read_choice("Select an analysis or choose an option: ", allowed + ["D", "d"])
     if choice == "0":
         return "back", None
+    if choice.upper() == "D":
+        print("Select an analysis to delete:")
+        delete_choice = read_choice("Analysis number (0 to cancel): ", allowed)
+        if delete_choice == "0":
+            return "back", None
+        record = records[int(delete_choice) - 1]
+        if not confirm_delete_analysis(record):
+            print("Deletion cancelled.")
+            return "back", None
+        return "delete", record
     return "view", records[int(choice) - 1]
+
+def confirm_delete_analysis(record):
+    """Ask for explicit confirmation before deleting a saved analysis."""
+    return read_yes_no("Delete the analysis for {}? (Y/N): ".format(record["product_name"]))
