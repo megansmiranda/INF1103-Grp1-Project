@@ -40,17 +40,22 @@ FLAG_DESCRIPTIONS = {
 }
 
 LINE = "=" * 60
-
+MAX_SUGAR_G = 100
+MAX_PROTEIN_G = 100
+MAX_SODIUM_MG = 5000
+QUIT = object()
 
 # ===========================================================================
 # PERSON A - A1/A2: reusable input helpers
 # ===========================================================================
 
-def read_required_text(prompt):
+def read_required_text(prompt, allow_quit=False):
     """Keep asking until the user types something that is not blank.
     Returns the text with outer spaces removed."""
     while True:
         text = input(prompt).strip()
+        if _is_quit(text, allow_quit):
+            return QUIT
         if text:
             return text
         print("  This field cannot be empty. Please try again.")
@@ -58,14 +63,21 @@ def read_required_text(prompt):
 
 def read_optional_text(prompt):
     """Ask for optional text. Blank input returns None (meaning 'not given')."""
-    text = input(prompt).strip()
-    return text if text else None
+    while True:
+        text = input(prompt).strip()
+        if text.lower() == "none":
+            return None
+        if text:
+            return text
+        print("  Please type your answer, or type 'none' to skip.")
 
 
-def read_choice(prompt, allowed_choices):
+def read_choice(prompt, allowed_choices, allow_quit=False):
     """Keep asking until the answer is one of allowed_choices (a list of strings)."""
     while True:
         choice = input(prompt).strip()
+        if _is_quit(choice, allow_quit):
+            return QUIT
         if choice in allowed_choices:
             return choice
         print("  Invalid choice. Please enter one of: " + ", ".join(allowed_choices))
@@ -77,22 +89,29 @@ def read_yes_no(prompt):
     return answer.upper() == "Y"
 
 
-def read_number(prompt, allow_missing=False, allow_zero=False):
+def read_number(prompt, allow_missing=False, allow_zero=False, max_value=None, allow_quit=False):
     """Ask for a number and validate it.
 
     allow_missing=True -> blank input returns None (value not on label)
     allow_zero=True    -> 0 is accepted (e.g. 0 g sugar is a real value)
+    max_value          -> if given, numbers above this are rejected
+    allow_quit         -> if True, the user can type 'quit' to exit
     Rejects: letters, negative numbers, 'nan', 'inf'.
     Returns a float, or None only when allow_missing is True.
     """
     while True:
         raw = input(prompt).strip()
+        if _is_quit(raw, allow_quit):
+            return QUIT
 
         # 1. Blank input
+        if allow_missing and raw.lower() == "none":
+            return None
         if raw == "":
             if allow_missing:
-                return None
-            print("  A number is required.")
+                print("  Please enter a number, or type 'none' if it is not on the label.")
+            else:
+                print("  A number is required.")
             continue
 
         # 2. Must convert to a number
@@ -114,19 +133,129 @@ def read_number(prompt, allow_missing=False, allow_zero=False):
         if value == 0 and not allow_zero:
             print("  The number must be greater than 0.")
             continue
+        if max_value is not None and value > max_value:
+            print("  That value looks too high (maximum allowed: {:g}). "
+                  "Please check the label and try again.".format(max_value))
+            continue
 
         return value
 
 
-def read_ingredient_list(prompt):
-    """Read comma-separated words into a clean list. Blank input returns []."""
-    raw = input(prompt)
-    items = []
-    for part in raw.split(","):
-        part = part.strip()
-        if part:
-            items.append(part)
-    return items
+def read_ingredient_list(prompt, allow_quit=False):
+    """Read comma-separated words into a clean list.
+    The user must type 'none' for an empty list."""
+    while True:
+        raw = input(prompt).strip()
+        if _is_quit(raw, allow_quit):
+            return QUIT
+        if raw.lower() == "none":
+            return []
+        items = [part.strip() for part in raw.split(",") if part.strip()]
+        if items:
+            return items
+        print("  Please list the ingredients, or type 'none'.")
+
+
+def _is_quit(text, allow_quit):
+    """True if quitting is allowed and the user typed 'quit' (any case)."""
+    return allow_quit and text.strip().lower() == "quit"
+
+# ===========================================================================
+# PERSON A - A3/A4: profiles
+# ===========================================================================
+
+def _ask_goal_and_target(allow_quit=False):
+    """Shared by create and update: ask for goal + numeric target.
+    Returns (goal_code, target_value, unit_code), or QUIT."""
+    print("  1. Reduce Sugar   2. High Protein   3. Lower Sodium")
+    choice = read_choice("Goal: ", ["1", "2", "3"], allow_quit=allow_quit)
+    if choice is QUIT:
+        return QUIT
+    goal = GOAL_CHOICES[choice]
+    info = GOAL_INFO[goal]
+    prompt = "{} {} per serving ({}): ".format(
+        info["direction"].capitalize(), info["nutrient"], info["unit"])
+    target = read_number(prompt, allow_quit=allow_quit)
+    if target is QUIT:
+        return QUIT
+    return goal, target, info["unit_code"]
+
+
+def collect_profile():
+    """Ask for a brand new profile. Returns a profile dictionary
+    (NOT saved yet - main.py asks data_manager to save it)."""
+    print("\n--- CREATE PROFILE ---")
+    print("(Type 'quit' at any question to cancel.)")
+    name = read_required_text("Profile name: ", allow_quit=True)
+    if name is QUIT:
+        return _cancel_profile()
+    result = _ask_goal_and_target(allow_quit=True)
+    if result is QUIT:
+        return _cancel_profile()
+    goal, target, unit = result
+    avoid = read_ingredient_list("Ingredients to avoid (comma-separated; type 'none' for none): ", allow_quit=True)
+    if avoid is QUIT:
+        return _cancel_profile()
+    return {
+        "profile_name": name,
+        "primary_goal": goal,
+        "target_value": target,
+        "target_unit": unit,
+        "avoid_ingredients": avoid,
+    }
+
+def _cancel_profile():
+    print("Profile creation cancelled.")
+    return None
+
+
+def describe_target(profile):
+    """Return text such as 'maximum 10 g sugar per serving'."""
+    info = GOAL_INFO[profile["primary_goal"]]
+    return "{} {:g} {} {} per serving".format(
+        info["direction"], profile["target_value"], info["unit"], info["nutrient"])
+
+
+def select_profile(profiles):
+    """LIST VIEW: show saved profiles and let the user pick one.
+    Returns the chosen profile dictionary, or None for Back / empty list."""
+    if not profiles:
+        print("No saved profiles. Create one first.")
+        return None
+
+    print("\n--- SAVED PROFILES ---")
+    for number, profile in enumerate(profiles, start=1):
+        print("{}. {} | {} | {}".format(
+            number, profile["profile_name"],
+            GOAL_INFO[profile["primary_goal"]]["label"], describe_target(profile)))
+    print("0. Back")
+
+    allowed = [str(n) for n in range(0, len(profiles) + 1)]
+    choice = read_choice("Select profile: ", allowed)
+    if choice == "0":
+        return None
+    return profiles[int(choice) - 1]
+
+
+def update_profile(profile):
+    """Ask for new goal/target/avoid list for the active profile.
+    Returns a NEW dictionary (the original is not changed), or None if cancelled.
+    The profile name stays the same so saved history still matches."""
+    print("\n--- UPDATE PROFILE: {} ---".format(profile["profile_name"]))
+    print("Current goal  : " + GOAL_INFO[profile["primary_goal"]]["label"])
+    print("Current target: " + describe_target(profile))
+    if not read_yes_no("Continue update? (Y/N): "):
+        return None
+
+    goal, target, unit = _ask_goal_and_target()
+    avoid = read_ingredient_list("Ingredients to avoid (comma-separated; type 'none' for none): ")
+    return {
+        "profile_name": profile["profile_name"],
+        "primary_goal": goal,
+        "target_value": target,
+        "target_unit": unit,
+        "avoid_ingredients": avoid,
+    }
 
 
 # ===========================================================================
@@ -176,9 +305,9 @@ def collect_product(profile):
     product_name = read_required_text("Product name: ")
     brand = read_optional_text("Brand (optional): ")
     category = read_optional_text("Category (optional): ")
-    sugar = read_number("Sugar per serving (g; Enter if missing): ", allow_missing=True, allow_zero=True)
-    protein = read_number("Protein per serving (g; Enter if missing): ", allow_missing=True, allow_zero=True)
-    sodium = read_number("Sodium per serving (mg; Enter if missing): ", allow_missing=True, allow_zero=True)
+    sugar = read_number("Sugar per serving (g; 'none' if missing): ", allow_missing=True, allow_zero=True, max_value=MAX_SUGAR_G)
+    protein = read_number("Protein per serving (g; 'none' if missing): ", allow_missing=True, allow_zero=True, max_value=MAX_PROTEIN_G)
+    sodium = read_number("Sodium per serving (mg; 'none' if missing): ", allow_missing=True, allow_zero=True, max_value=MAX_SODIUM_MG)
     ingredients = read_required_text("Ingredients (copy from label): ")
     claim = read_optional_text("Marketing claim (optional, e.g. 'Low Sugar'): ")
 
