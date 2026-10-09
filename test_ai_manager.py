@@ -221,6 +221,22 @@ def test_falls_back_to_groq_when_gemini_key_rejected():
     assert calls == ["gemini", "groq"]              # bad key is not retried
 
 
+def test_all_attempts_fail_with_one_pause_per_retry_only():
+    calls, pauses = [], []
+    gemini = make_fake("gemini", [(None, "API_UNAVAILABLE")] * 2, calls)
+    groq = make_fake("groq", [(None, "API_UNAVAILABLE")] * 2, calls)
+    original_sleep = ai_manager.time.sleep
+    ai_manager.time.sleep = pauses.append            # record pauses instead of waiting
+    try:
+        result = run_with_fake_providers([gemini, groq])
+    finally:
+        ai_manager.time.sleep = original_sleep
+    assert result == {"ok": False, "ai_analysis": None,
+                      "error_code": "API_UNAVAILABLE", "provider": None}
+    assert calls == ["gemini", "gemini", "groq", "groq"]
+    assert len(pauses) == 2                         # before each retry, none after the last try
+
+
 def test_no_api_keys_is_configuration_error():
     result = run_with_fake_providers([])
     assert result["ok"] is False and result["error_code"] == "CONFIGURATION_ERROR"
@@ -246,6 +262,7 @@ def run_offline_tests():
         test_retry_once_after_invalid_output,
         test_gives_up_after_two_bad_answers,
         test_falls_back_to_groq_when_gemini_key_rejected,
+        test_all_attempts_fail_with_one_pause_per_retry_only,
         test_no_api_keys_is_configuration_error,
     ]
     logging.disable(logging.CRITICAL)   # hide the expected warnings from the fake failures

@@ -362,8 +362,8 @@ def analyse_product(product, profile):
             last_error = error
             if error in NON_RETRYABLE_ERRORS:
                 break                     # wrong key/model: skip to the backup provider
-            if error == "API_UNAVAILABLE":
-                time.sleep(1)             # brief pause before retrying a busy server
+            if error == "API_UNAVAILABLE" and attempt < MAX_ATTEMPTS_PER_PROVIDER:
+                time.sleep(1)             # brief pause before retrying the SAME busy server
 
     logger.error("All AI providers failed. Last error: %s", last_error)
     return _failure(last_error)
