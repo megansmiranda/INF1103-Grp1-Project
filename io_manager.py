@@ -13,6 +13,7 @@ It never calls the AI, never decides flags and never reads/writes files.
 
 import math
 import textwrap
+from datetime import datetime
 
 # ---------------------------------------------------------------------------
 # Shared lookup tables (used only for asking questions and displaying text)
@@ -295,14 +296,11 @@ def _fmt(value, unit):
     return "{:g} {}".format(value, unit)
 
 
-def collect_product(profile):
+def collect_product(profile, product_name):
     """Ask for one product label. Returns a product dictionary,
     or None if the user says N at the confirmation step."""
-    print("\n--- ANALYSE A PRODUCT ---")
-    #print("Profile: {} | {}".format(profile["profile_name"], describe_target(profile)))
     print("Enter nutrition values PER SERVING. Press Enter if a value is not on the label.")
 
-    product_name = read_required_text("Product name: ")
     brand = read_optional_text("Brand (optional): ")
     category = read_optional_text("Category (optional): ")
     sugar = read_number("Sugar per serving (g; 'none' if missing): ", allow_missing=True, allow_zero=True, max_value=MAX_SUGAR_G)
@@ -329,11 +327,16 @@ def confirm_product(product, profile):
     """Show a summary of what was typed and ask Y/N. Returns True or False."""
     n = product["nutrition"]
     print("\n--- PLEASE CONFIRM ---")
-    print("Product : " + product["product_name"])
-#    print("Profile : {} | {}".format(profile["profile_name"], describe_target(profile)))
-    print("Sugar: {} | Protein: {} | Sodium: {}".format(
+    print("Profile: {} | {}".format(profile["profile_name"], describe_target(profile)))
+    print("Product: {} | Brand: {} | Category: {}".format(
+        product["product_name"], product["brand"] or "Not provided",
+        product["category"] or "Not provided"))
+    print("Ingredients: " + product["ingredient_text"])
+    print("Sugar: {} | Protein: {} | Sodium: {} (per serving)".format(
         _fmt(n["sugar_g"], "g"), _fmt(n["protein_g"], "g"), _fmt(n["sodium_mg"], "mg")))
-    print("Claim   : " + (product["marketing_claim"] or "None"))
+    print("Marketing claim: " + (product["marketing_claim"] or "None"))
+    avoid = profile["avoid_ingredients"]
+    print("Ingredients to avoid: " + (", ".join(avoid) if avoid else "No avoidance preferences entered"))
     return read_yes_no("Analyse this product? (Y/N): ")
 
 
