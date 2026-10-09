@@ -1,15 +1,3 @@
-"""
-sample_data.py - HARDCODED TEST DATA (shared by everyone)
-
-These dictionaries look EXACTLY like what io_manager returns, so each manager
-can be tested on its own before the I/O part is finished:
-  - AI Manager:    ai_manager.analyse_product(SAMPLE_PRODUCTS["cereal"], SAMPLE_PROFILES["jane"])
-  - Logic Manager: logic_manager.evaluate_product(product, profile, SAMPLE_AI_RESPONSES[...])
-  - Data Manager:  data_manager.build_analysis(...) / save_analysis(...)
-
-Jane, Ari and Sam are fictional users.
-"""
-
 # --- Profiles (what io_manager.collect_profile() returns) -------------------
 SAMPLE_PROFILES = {
     "jane": {
@@ -77,7 +65,7 @@ SAMPLE_PRODUCTS = {
     },
 }
 
-# --- Fake AI answers (what ai_analysis looks like AFTER validation) ---------
+# --- Hardcoded AI answers (what ai_analysis looks like AFTER validation) ---------
 # Used by test_logic.py so Logic can be tested with NO internet / NO API key.
 SAMPLE_AI_RESPONSES = {
     "questionable_high": {
