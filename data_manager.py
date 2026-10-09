@@ -157,6 +157,22 @@ def save_analysis(record, data_dir):
     return _ok(records)
 
 
+def delete_analysis(record, data_dir):
+    """Remove one matching saved analysis from analyses.json."""
+    loaded = load_history(data_dir)
+    if not loaded["ok"]:
+        return loaded                                    # never overwrite a broken file
+
+    records = loaded["data"]
+    try:
+        records.remove(record)
+    except ValueError:
+        return _fail("ANALYSIS_NOT_FOUND")
+
+    if not _write_list(Path(data_dir) / ANALYSES_FILE, records):
+        return _fail("WRITE_ERROR")
+    return _ok(records)
+
 # ===========================================================================
 # Query / filter functions
 # ===========================================================================
