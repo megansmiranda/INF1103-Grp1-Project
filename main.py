@@ -206,8 +206,7 @@ def handle_update_profile(active_profile):
         return active_profile
     result = data_manager.save_profile(updated, DATA_DIR, create=False)
     if result["ok"]:
-        io_manager.show_message("Profile saved. New analyses will use: "
-                                + io_manager.describe_target(updated))
+        io_manager.show_message("Profile updated.")
         return updated                     # only switch to new settings after a successful save
     io_manager.show_message("Profile was not updated. " + error_text(result["error_code"]))
     return active_profile

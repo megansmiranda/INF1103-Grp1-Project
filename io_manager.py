@@ -251,24 +251,47 @@ def select_profile(profiles):
 
 
 def update_profile(profile):
-    """Ask for new goal/target/avoid list for the active profile.
+    """Ask for new goal/target and how to handle avoided ingredients.
     Returns a NEW dictionary (the original is not changed), or None if cancelled.
     The profile name stays the same so saved history still matches."""
     print("\n--- UPDATE PROFILE: {} ---".format(profile["profile_name"]))
     print("Current goal  : " + GOAL_INFO[profile["primary_goal"]]["label"])
     print("Current target: " + describe_target(profile))
+    current_avoid = profile["avoid_ingredients"]
     if not read_yes_no("Continue update? (Y/Yes or N/No): "):
         return None
 
     goal, target, unit = _ask_goal_and_target()
-    avoid = read_ingredient_list("Ingredients to avoid (comma-separated; type 'none' for none): ")
-    return {
+    print("Current ingredients to avoid: "
+          + (", ".join(current_avoid) if current_avoid else "None"))
+    print("1. Keep current   2. Replace   3. Clear   0. Cancel")
+    choice = read_choice("Choice: ", ["1", "2", "3", "0"])
+    if choice == "0":
+        return None
+    if choice == "1":
+        avoid = list(current_avoid)
+    elif choice == "2":
+        avoid = read_ingredient_list(
+            "Ingredients to avoid (comma-separated; type 'none' for none): ")
+    else:
+        avoid = []
+
+    updated = {
         "profile_name": profile["profile_name"],
         "primary_goal": goal,
         "target_value": target,
         "target_unit": unit,
         "avoid_ingredients": avoid,
     }
+    info = GOAL_INFO[goal]
+    target_summary = "{} {:g} {} per serving".format(
+        info["direction"].capitalize(), target, info["unit"])
+    print("\nReview: {} | {} | {}".format(
+        updated["profile_name"], info["label"], target_summary))
+    print("Ingredients to avoid: " + (", ".join(avoid) if avoid else "None"))
+    if not read_yes_no("Save these changes? Yes/No: "):
+        return None
+    return updated
 
 
 def confirm_delete_profile(profile, analysis_count):
