@@ -127,3 +127,133 @@ def read_ingredient_list(prompt):
         if part:
             items.append(part)
     return items
+
+
+# ===========================================================================
+# PERSON A - A5: menu and messages
+# ===========================================================================
+
+def show_main_menu(active_profile):
+    """Display the main menu once and return the user's choice as a string."""
+    name = active_profile["profile_name"] if active_profile else "None"
+    print("\n" + LINE)
+    print(" NutriLenz - AI Food Label Interpreter")
+    print(" Active profile: " + name)
+    print(LINE)
+    print(" 1. Create a profile")
+    print(" 2. Select a saved profile")
+    print(" 3. Analyse a product")
+    print(" 4. View previous analyses")
+    print(" 5. Update active profile")
+    print(" 0. Exit")
+    return read_choice("Choose: ", ["0", "1", "2", "3", "4", "5"])
+
+
+def show_message(message):
+    """Print any message given by main.py (the only way other files 'talk')."""
+    print(message)
+
+
+# ===========================================================================
+# PERSON B - B1/B2: product entry and confirmation
+# ===========================================================================
+
+def _fmt(value, unit):
+    """Show a nutrition value, or 'Not provided' when it is None.
+    (We check 'is None' so that 0 is still shown as 0.)"""
+    if value is None:
+        return "Not provided"
+    return "{:g} {}".format(value, unit)
+
+
+def collect_product(profile):
+    """Ask for one product label. Returns a product dictionary,
+    or None if the user says N at the confirmation step."""
+    print("\n--- ANALYSE A PRODUCT ---")
+    #print("Profile: {} | {}".format(profile["profile_name"], describe_target(profile)))
+    print("Enter nutrition values PER SERVING. Press Enter if a value is not on the label.")
+
+    product_name = read_required_text("Product name: ")
+    brand = read_optional_text("Brand (optional): ")
+    category = read_optional_text("Category (optional): ")
+    sugar = read_number("Sugar per serving (g; Enter if missing): ", allow_missing=True, allow_zero=True)
+    protein = read_number("Protein per serving (g; Enter if missing): ", allow_missing=True, allow_zero=True)
+    sodium = read_number("Sodium per serving (mg; Enter if missing): ", allow_missing=True, allow_zero=True)
+    ingredients = read_required_text("Ingredients (copy from label): ")
+    claim = read_optional_text("Marketing claim (optional, e.g. 'Low Sugar'): ")
+
+    product = {
+        "product_name": product_name,
+        "brand": brand,
+        "category": category,
+        "nutrition": {"sugar_g": sugar, "protein_g": protein, "sodium_mg": sodium},
+        "ingredient_text": ingredients,
+        "marketing_claim": claim,
+    }
+
+    if confirm_product(product, profile):
+        return product
+    return None
+
+
+def confirm_product(product, profile):
+    """Show a summary of what was typed and ask Y/N. Returns True or False."""
+    n = product["nutrition"]
+    print("\n--- PLEASE CONFIRM ---")
+    print("Product : " + product["product_name"])
+#    print("Profile : {} | {}".format(profile["profile_name"], describe_target(profile)))
+    print("Sugar: {} | Protein: {} | Sodium: {}".format(
+        _fmt(n["sugar_g"], "g"), _fmt(n["protein_g"], "g"), _fmt(n["sodium_mg"], "mg")))
+    print("Claim   : " + (product["marketing_claim"] or "None"))
+    return read_yes_no("Analyse this product? (Y/N): ")
+
+
+# ===========================================================================
+# PERSON B - B3: display ONE analysis record
+# ===========================================================================
+
+def show_analysis(record):
+    """RECORD VIEW: display a completed (new or saved) analysis.
+    Uses record['profile_snapshot'] so old records show the OLD target."""
+    snap = record["profile_snapshot"]
+    info = GOAL_INFO[snap["primary_goal"]]
+    ai = record["ai_analysis"]
+    n = record["nutrition"]
+
+    print("\n" + LINE)
+    print(" NUTRILENZ ANALYSIS | " + record["product_name"])
+    print(LINE)
+    if record.get("analysed_at"):
+        print("Analysed on  : " + record["analysed_at"])
+    print("Profile used : {} | {}".format(snap["profile_name"], info["label"]))
+#    print("Target used  : " + describe_target(snap))
+    print("Nutrition    : Sugar {} | Protein {} | Sodium {} (per serving)".format(
+        _fmt(n["sugar_g"], "g"), _fmt(n["protein_g"], "g"), _fmt(n["sodium_mg"], "mg")))
+    print("Claim        : " + (record["marketing_claim"] or "None"))
+
+    # Flags decided by logic_manager - we only display them
+    print("\nFLAGS:")
+    if record["flags"]:
+        for flag in record["flags"]:
+            print("  [{}] {}".format(flag, FLAG_DESCRIPTIONS.get(flag, "")))
+    else:
+        print("  No positive match issued; see the interpretation below.")
+
+    # AI interpretation fields
+    print("\nAI INTERPRETATION:")
+    print("  Goal alignment : " + ai["goal_alignment"])
+    print("  Claim status   : " + ai["claim_status"])
+    print("  Confidence     : " + ai["confidence"])
+    relevant = ", ".join(ai["relevant_ingredients"]) or "None identified"
+    print("  Relevant ingredients: " + relevant)
+    print("  Evidence:")
+    if ai["evidence"]:
+        for item in ai["evidence"]:
+            print(textwrap.fill(item, width=70, initial_indent="    - ",
+                                subsequent_indent="      "))
+    else:
+        print("    - None supplied")
+    print("  Explanation:")
+    print(textwrap.fill(ai["explanation"], width=70, initial_indent="    ",
+                        subsequent_indent="    "))
+    print(LINE)
