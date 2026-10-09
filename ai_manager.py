@@ -124,7 +124,7 @@ Return ONLY one JSON object (no markdown, no extra text) with exactly these 6 ke
   "relevant_ingredients": [list of ingredient names from the label, or []],
   "goal_alignment": "ALIGNED" | "MIXED" | "POOR_ALIGNMENT" | "INSUFFICIENT_INFORMATION",
   "claim_status": "CONSISTENT" | "QUESTIONABLE" | "INSUFFICIENT_INFORMATION" | "NO_CLAIM",
-  "evidence": [short strings quoting label facts that support your answer, or []],
+  "evidence": [at least one short string quoting the supplied label data that supports your answer],
   "explanation": "2-4 plain-English sentences written for this user's goal",
   "confidence": "HIGH" | "MEDIUM" | "LOW"
 }"""
@@ -292,6 +292,8 @@ def validate_ai_response(data, has_claim):
 
     _check_string_list(data, "relevant_ingredients")
     _check_string_list(data, "evidence")
+    if not data["evidence"]:
+        raise ValueError("evidence must quote at least one fact from the label")
 
     if data["goal_alignment"] not in ALLOWED_GOAL_ALIGNMENT:
         raise ValueError("Bad goal_alignment: " + str(data["goal_alignment"]))

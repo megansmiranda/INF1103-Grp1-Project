@@ -119,6 +119,10 @@ def test_validate_rejects_bad_responses():
     evidence_string["evidence"] = "just a string"
     expect_value_error(ai_manager.validate_ai_response, evidence_string, True)
 
+    no_evidence = deepcopy(base)
+    no_evidence["evidence"] = []                    # every answer must quote the label
+    expect_value_error(ai_manager.validate_ai_response, no_evidence, True)
+
     # has a claim status but the user never typed a claim
     expect_value_error(ai_manager.validate_ai_response, deepcopy(base), False)
 
