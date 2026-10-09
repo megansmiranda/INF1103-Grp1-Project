@@ -65,7 +65,12 @@ def setup_logging():
 # ===========================================================================
 
 def handle_create_profile(active_profile):
-    profile = io_manager.collect_profile()
+    loaded = data_manager.load_profiles(DATA_DIR)
+    if not loaded["ok"]:
+        io_manager.show_message("Saved profiles could not be loaded. "
+                                + error_text(loaded["error_code"]))
+        return active_profile
+    profile = io_manager.collect_profile(loaded["data"])
     if profile is None:                    # user typed quit: nothing is saved
         return active_profile
     result = data_manager.save_profile(profile, DATA_DIR, create=True)

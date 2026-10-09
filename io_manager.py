@@ -187,14 +187,21 @@ def _ask_goal_and_target(allow_quit=False):
     return goal, target, info["unit_code"]
 
 
-def collect_profile():
+def collect_profile(existing_profiles):
     """Ask for a brand new profile. Returns a profile dictionary
-    (NOT saved yet - main.py asks data_manager to save it)."""
+    (NOT saved yet - main.py asks data_manager to save it).
+    Existing profiles are supplied so duplicate names can be rejected immediately."""
     print("\n--- CREATE PROFILE ---")
     print("(Type 'quit' at any question to cancel.)")
-    name = read_required_text("Profile name: ", allow_quit=True)
-    if name is QUIT:
-        return _cancel_profile()
+    while True:
+        name = read_required_text("Profile name: ", allow_quit=True)
+        if name is QUIT:
+            return _cancel_profile()
+        if any(profile["profile_name"].strip().casefold() == name.casefold()
+               for profile in existing_profiles):
+            print("  A profile with that name already exists. Please enter a different name.")
+            continue
+        break
     result = _ask_goal_and_target(allow_quit=True)
     if result is QUIT:
         return _cancel_profile()
