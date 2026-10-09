@@ -159,6 +159,20 @@ def test_unreadable_or_wrong_shape_reply_is_invalid_response():
     assert post_with_fake_reply(b'{"ok": 1}') == ({"ok": 1}, None)
 
 
+def make_http_error(code, body):
+    return ai_manager.urllib.error.HTTPError("https://example.test", code, "Bad Request",
+                                             {}, io.BytesIO(body))
+
+
+def test_http_errors_map_to_codes_and_log_provider_reason():
+    wrong_model = b'{"error": {"message": "models/gemini-x is not found"}}'
+    assert ai_manager._error_reason(make_http_error(404, wrong_model)) == "models/gemini-x is not found"
+    assert ai_manager._error_reason(make_http_error(500, b"not json")) == "Bad Request"
+    assert post_with_fake_reply(make_http_error(404, wrong_model)) == (None, "CONFIGURATION_ERROR")
+    assert post_with_fake_reply(make_http_error(401, b"")) == (None, "AUTHENTICATION_ERROR")
+    assert post_with_fake_reply(make_http_error(429, b"")) == (None, "API_UNAVAILABLE")
+
+
 # ---------------------------------------------------------------------------
 # Retry + fallback logic, using FAKE providers (no internet)
 # ---------------------------------------------------------------------------
@@ -228,6 +242,7 @@ def run_offline_tests():
         test_validate_rejects_bad_responses,
         test_cut_off_download_is_connection_error,
         test_unreadable_or_wrong_shape_reply_is_invalid_response,
+        test_http_errors_map_to_codes_and_log_provider_reason,
         test_retry_once_after_invalid_output,
         test_gives_up_after_two_bad_answers,
         test_falls_back_to_groq_when_gemini_key_rejected,

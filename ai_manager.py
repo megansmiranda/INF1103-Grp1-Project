@@ -140,6 +140,18 @@ def build_prompt(payload):
 # STEP 3: call the API (all provider-specific code lives here)
 # ===========================================================================
 
+def _error_reason(http_error):
+    """Pull the provider's short reason out of an HTTP error reply, for the log.
+    Gemini and Groq both send {"error": {"message": "..."}}. Never raises.
+    API keys travel in request headers, so they are not part of this reply."""
+    try:
+        reply = json.loads(http_error.read().decode("utf-8"))
+        reason = str(reply["error"]["message"])
+    except Exception:
+        reason = str(http_error.reason)
+    return reason[:200]
+
+
 def _post_json(url, headers, body):
     """Send a POST request with a JSON body.
     Returns (response_dict, None) on success or (None, error_code) on failure."""
@@ -158,7 +170,7 @@ def _post_json(url, headers, body):
         return reply, None
     except urllib.error.HTTPError as error:
         # The server answered, but with an error status code
-        logger.warning("HTTP %s from %s", error.code, url.split("?")[0])
+        logger.warning("HTTP %s from %s: %s", error.code, url.split("?")[0], _error_reason(error))
         if error.code in (401, 403):
             return None, "AUTHENTICATION_ERROR"
         if error.code in (400, 404):
