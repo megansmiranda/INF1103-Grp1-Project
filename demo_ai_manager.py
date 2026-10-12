@@ -9,13 +9,8 @@ Run:  python demo_ai_manager.py          (needs a .env with at least one API key
 """
 
 import ai_manager
+from io_manager import read_choice, show_message   # all keyboard input and printing stay in io_manager
 from sample_data import SAMPLE_PRODUCTS, SAMPLE_PROFILES
-
-# Use the shared display function once the I/O branch is merged
-try:
-    from io_manager import show_message
-except ImportError:
-    show_message = print
 
 # Each demo pairs one sample product with the profile it is meant to test
 DEMOS = [
@@ -77,18 +72,17 @@ def main():
             show_message("    " + note)
         show_message(" A. Run all")
         show_message(" 0. Exit")
-        choice = input("Choose: ").strip().upper()
+        allowed = ["0", "A", "a"] + [str(n) for n in range(1, len(DEMOS) + 1)]
+        choice = read_choice("Choose: ", allowed).upper()   # re-prompts on invalid input
 
         if choice == "0":
             break
         if choice == "A":
             for product_key, profile_key, _ in DEMOS:
                 run_demo(product_key, profile_key)
-        elif choice.isdigit() and 1 <= int(choice) <= len(DEMOS):
+        else:
             product_key, profile_key, _ = DEMOS[int(choice) - 1]
             run_demo(product_key, profile_key)
-        else:
-            show_message("Invalid choice.")
 
 
 if __name__ == "__main__":
