@@ -12,14 +12,14 @@ GOAL_RULES = {
 # PERSON A: numeric target check (does NOT look at AI output at all)
 # ===========================================================================
 
-def get_goal_rule(primary_goal):
+def get_goal_rule(primary_goal: str) -> dict:
     """Return a copy of the goal rule. Unsupported goals raise ValueError."""
     if not isinstance(primary_goal, str) or primary_goal not in GOAL_RULES:
         raise ValueError("Unknown goal: " + str(primary_goal))
     return GOAL_RULES[primary_goal].copy()
 
 
-def _is_number(value):
+def _is_number(value: object) -> bool:
     """Accept finite int/float values, excluding bool and numeric text."""
     if isinstance(value, bool):
         return False
@@ -27,7 +27,7 @@ def _is_number(value):
     return isinstance(value, int) or (isinstance(value, float) and math.isfinite(value))
 
 
-def _require_fields(data, fields, name):
+def _require_fields(data: object, fields: tuple, name: str) -> None:
     """Reject malformed dictionaries with a field-specific integration error."""
     if not isinstance(data, dict):
         raise ValueError(name + " must be a dictionary")
@@ -36,7 +36,7 @@ def _require_fields(data, fields, name):
             raise ValueError("Missing required field: " + name + "." + field)
 
 
-def _get_nutrition(product):
+def _get_nutrition(product: dict) -> dict:
     """Read the nutrition dictionary without changing the product."""
     _require_fields(product, ("nutrition",), "product")
     nutrition = product["nutrition"]
@@ -44,7 +44,7 @@ def _get_nutrition(product):
     return nutrition
 
 
-def _get_nutrient_value(nutrition, nutrient_key):
+def _get_nutrient_value(nutrition: dict, nutrient_key: str) -> float | None:
     """A required key may contain None, but must not be absent or invalid."""
     _require_fields(nutrition, (nutrient_key,), "product.nutrition")
     value = nutrition[nutrient_key]
@@ -54,7 +54,7 @@ def _get_nutrient_value(nutrition, nutrient_key):
     return value
 
 
-def evaluate_target(product, profile):
+def evaluate_target(product: dict, profile: dict) -> str:
     """Compare the selected nutrient with the user's target.
 
     Return MET, MISMATCH or MISSING (a present nutrient key containing None).
@@ -88,7 +88,7 @@ def evaluate_target(product, profile):
 # PERSON A: unusual-number warnings (for main.py to call before the AI step)
 # ===========================================================================
 
-def check_unusual_numbers(product, warning_limits=None):
+def check_unusual_numbers(product: dict, warning_limits: dict | None = None) -> list[str]:
     """Validate all three nutrients and return a list of warning messages.
 
     warning_limits is a dictionary of nutrient keys to team-agreed positive
@@ -141,7 +141,7 @@ def check_unusual_numbers(product, warning_limits=None):
 # PERSON B: review rules using the validated AI analysis
 # ===========================================================================
 
-def needs_manual_review(target_status, ai_analysis):
+def needs_manual_review(target_status: str, ai_analysis: dict) -> bool:
     """Return True when missing data or uncertain AI output requires review.
 
     NO_CLAIM alone is not a review reason. main.py handles API failures before
@@ -153,7 +153,7 @@ def needs_manual_review(target_status, ai_analysis):
             or ai_analysis["claim_status"] == "INSUFFICIENT_INFORMATION")
 
 
-def needs_claim_review(product, ai_analysis):
+def needs_claim_review(product: dict, ai_analysis: dict) -> bool:
     """Review a supplied questionable claim only at MEDIUM/HIGH confidence.
 
     All three conditions must hold. LOW confidence leads to manual review
@@ -166,7 +166,7 @@ def needs_claim_review(product, ai_analysis):
             and ai_analysis["confidence"] in ("MEDIUM", "HIGH"))
 
 
-def is_good_match(target_status, manual, claim_review, ai_analysis):
+def is_good_match(target_status: str, manual: bool, claim_review: bool, ai_analysis: dict) -> bool:
     """Require a met target, favourable AI fields and no review conditions.
 
     This concerns the selected nutritional goal. It does not certify overall
@@ -183,7 +183,7 @@ def is_good_match(target_status, manual, claim_review, ai_analysis):
 # PERSON B: combine Person A's numeric result and the review rules for main.py
 # ===========================================================================
 
-def evaluate_product(product, profile, ai_analysis):
+def evaluate_product(product: dict, profile: dict, ai_analysis: dict) -> list[str]:
     """Return final flags in a fixed order, without changing any input.
 
     Independent concerns can coexist: GOAL_MISMATCH, CLAIM_REVIEW, MANUAL_REVIEW.

@@ -12,11 +12,11 @@ ANALYSIS_KEYS = ("product_name", "brand", "category", "nutrition", "ingredient_t
                  "marketing_claim", "profile_snapshot", "ai_analysis", "flags")
 
 
-def _ok(data):
+def _ok(data: list) -> dict:
     return {"ok": True, "data": data, "error_code": None}
 
 
-def _fail(error_code):
+def _fail(error_code: str) -> dict:
     return {"ok": False, "data": None, "error_code": error_code}
 
 
@@ -24,7 +24,7 @@ def _fail(error_code):
 # Low-level helpers: read and write a JSON list safely
 # ===========================================================================
 
-def _load_list(path, required_keys):
+def _load_list(path: Path, required_keys: tuple) -> dict:
     """Read a JSON file that should contain a list of dictionaries."""
     path = Path(path)
     if not path.exists():
@@ -46,7 +46,7 @@ def _load_list(path, required_keys):
     return _ok(records)
 
 
-def _write_list(path, records):
+def _write_list(path: Path, records: list) -> bool:
     """Save a list to JSON. We write to a temporary file first and then swap it in,
     so a crash halfway through cannot destroy the previous good file."""
     path = Path(path)
@@ -63,7 +63,7 @@ def _write_list(path, records):
         return False
 
 
-def _same_name(a, b):
+def _same_name(a: str, b: str) -> bool:
     """Profile names are compared ignoring case and outer spaces."""
     return a.strip().casefold() == b.strip().casefold()
 
@@ -72,12 +72,12 @@ def _same_name(a, b):
 # Profiles
 # ===========================================================================
 
-def load_profiles(data_dir):
+def load_profiles(data_dir: str | Path) -> dict:
     """Load all saved profiles (called on startup and when selecting)."""
     return _load_list(Path(data_dir) / PROFILES_FILE, PROFILE_KEYS)
 
 
-def save_profile(profile, data_dir, create=True):
+def save_profile(profile: dict, data_dir: str | Path, create: bool = True) -> dict:
     """create=True  -> add a new profile (rejects duplicate names)
        create=False -> replace the existing profile with the same name"""
     loaded = load_profiles(data_dir)
@@ -105,7 +105,7 @@ def save_profile(profile, data_dir, create=True):
     return _ok(profiles)
 
 
-def delete_profile(profile_name, data_dir):
+def delete_profile(profile_name: str, data_dir: str | Path) -> dict:
     """Remove a profile AND all of its saved analyses.
     Both files are loaded and checked first, so a damaged file is never overwritten."""
     loaded = load_profiles(data_dir)
@@ -138,12 +138,12 @@ def delete_profile(profile_name, data_dir):
 # Analyses (history)
 # ===========================================================================
 
-def load_history(data_dir):
+def load_history(data_dir: str | Path) -> dict:
     """Load all saved analyses."""
     return _load_list(Path(data_dir) / ANALYSES_FILE, ANALYSIS_KEYS)
 
 
-def build_analysis(product, profile, ai_analysis, flags):
+def build_analysis(product: dict, profile: dict, ai_analysis: dict, flags: list[str]) -> dict:
     """Combine everything into ONE record. deepcopy makes a frozen snapshot of the
     profile, so if the user later changes their target, old results still show
     the target that was used at the time."""
@@ -155,7 +155,7 @@ def build_analysis(product, profile, ai_analysis, flags):
     return record
 
 
-def save_analysis(record, data_dir):
+def save_analysis(record: dict, data_dir: str | Path) -> dict:
     """Append one completed record to analyses.json."""
     if any(key not in record for key in ANALYSIS_KEYS):
         return _fail("INVALID_RECORD")
@@ -169,7 +169,7 @@ def save_analysis(record, data_dir):
     return _ok(records)
 
 
-def delete_analysis(record, data_dir):
+def delete_analysis(record: dict, data_dir: str | Path) -> dict:
     """Remove one matching saved analysis from analyses.json."""
     loaded = load_history(data_dir)
     if not loaded["ok"]:
@@ -189,7 +189,7 @@ def delete_analysis(record, data_dir):
 # Query / filter functions
 # ===========================================================================
 
-def query_history(records, profile_name, flag=None):
+def query_history(records: list[dict], profile_name: str, flag: str | None = None) -> list[dict]:
     """Return records belonging to one profile, in saved order.
     Optional: flag="GOAL_MISMATCH" keeps only records that have that flag."""
     results = []

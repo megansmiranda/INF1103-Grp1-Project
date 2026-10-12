@@ -43,11 +43,11 @@ ERROR_MESSAGES = {
 }
 
 
-def error_text(error_code):
+def error_text(error_code: str) -> str:
     return ERROR_MESSAGES.get(error_code, "Something went wrong (" + str(error_code) + ").")
 
 
-def setup_logging():
+def setup_logging() -> bool:
     """Send warnings/errors (e.g. API failures) to data/nutrilenz.log, not the screen.
     Returns False if the log file cannot be created; the app still runs without it."""
     try:
@@ -64,7 +64,7 @@ def setup_logging():
 # One small function per menu option. Each returns the (possibly new) active profile.
 # ===========================================================================
 
-def handle_create_profile(active_profile):
+def handle_create_profile(active_profile: dict | None) -> dict | None:
     loaded = data_manager.load_profiles(DATA_DIR)
     if not loaded["ok"]:
         io_manager.show_message("Saved profiles could not be loaded. "
@@ -81,7 +81,7 @@ def handle_create_profile(active_profile):
     return active_profile
 
 
-def handle_select_profile(active_profile):
+def handle_select_profile(active_profile: dict | None) -> dict | None:
     loaded = data_manager.load_profiles(DATA_DIR)
     if not loaded["ok"]:
         io_manager.show_message(error_text(loaded["error_code"]))
@@ -93,7 +93,7 @@ def handle_select_profile(active_profile):
     return chosen
 
 
-def count_previous_analyses(product_name, profile_name):
+def count_previous_analyses(product_name: str, profile_name: str) -> int | None:
     """How many saved analyses of this product the profile already has.
     Names match ignoring capital letters and outer spaces. Returns None if
     the history file cannot be read."""
@@ -105,7 +105,7 @@ def count_previous_analyses(product_name, profile_name):
                if record["product_name"].strip().casefold() == wanted)
 
 
-def save_with_retry(record):
+def save_with_retry(record: dict) -> None:
     """Save a finished analysis. If saving fails, offer to retry WITHOUT another AI call."""
     while True:
         saved = data_manager.save_analysis(record, DATA_DIR)
@@ -119,7 +119,7 @@ def save_with_retry(record):
             return
 
 
-def handle_analyse(active_profile):
+def handle_analyse(active_profile: dict) -> dict:
     # 1. INPUT: product name first, so repeats are caught before typing the whole label
     product_name = io_manager.collect_product_name(active_profile)
     previous = count_previous_analyses(product_name, active_profile["profile_name"])
@@ -170,7 +170,7 @@ def handle_analyse(active_profile):
     return active_profile
 
 
-def handle_history(active_profile):
+def handle_history(active_profile: dict) -> dict:
     # History only READS saved records: no AI call, no new flags, no re-saving.
     loaded = data_manager.load_history(DATA_DIR)
     if not loaded["ok"]:
@@ -185,7 +185,7 @@ def handle_history(active_profile):
     return active_profile
 
 
-def delete_saved_analysis(record):
+def delete_saved_analysis(record: dict) -> None:
     """The user has already confirmed in io_manager. Data does the file change."""
     delete_analysis = getattr(data_manager, "delete_analysis", None)
     if delete_analysis is None:
@@ -198,7 +198,7 @@ def delete_saved_analysis(record):
         io_manager.show_message("The analysis was NOT deleted. " + error_text(result["error_code"]))
 
 
-def handle_update_profile(active_profile):
+def handle_update_profile(active_profile: dict) -> dict:
     updated = io_manager.update_profile(active_profile)
     if updated is None:
         io_manager.show_message("Update cancelled.")
@@ -211,7 +211,7 @@ def handle_update_profile(active_profile):
     return active_profile
 
 
-def handle_delete_profile(active_profile):
+def handle_delete_profile(active_profile: dict | None) -> dict | None:
     if active_profile is None:
         io_manager.show_message("Please create or select a profile first.")
         return active_profile
@@ -248,7 +248,7 @@ MENU_ACTIONS = {
 NEEDS_PROFILE = ("3", "4", "5", "6")
 
 
-def main():
+def main() -> None:
     if not setup_logging():
         io_manager.show_message("Warning: the log file could not be created. "
                                 "NutriLenz will run, but errors will not be logged.")
