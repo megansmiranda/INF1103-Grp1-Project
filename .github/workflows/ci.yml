@@ -1,0 +1,36 @@
+# Continuous integration for NutriLenz.
+# On every push to main and every pull request, GitHub builds the Docker image
+# and runs all test scripts INSIDE the container. No API key is needed, because
+# the tests use hardcoded sample AI responses and fake API replies.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  docker-build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Check the code is 100% procedural (no class definitions)
+        run: |
+          if grep -rnE '^\s*class\s' --include='*.py' .; then
+            echo "Class definitions found - the project must be procedural."
+            exit 1
+          fi
+
+      - name: Build the Docker image
+        run: docker build -t nutrilenz .
+
+      - name: Logic tests (required, hardcoded AI responses, no API)
+        run: docker run --rm nutrilenz python test_logic.py
+
+      - name: Data manager tests
+        run: docker run --rm nutrilenz python test_data.py
+
+      - name: AI manager offline tests (fake API replies)
+        run: docker run --rm nutrilenz python test_ai_manager.py
