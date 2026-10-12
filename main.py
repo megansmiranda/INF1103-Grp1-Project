@@ -44,6 +44,7 @@ ERROR_MESSAGES = {
 
 
 def error_text(error_code: str) -> str:
+    """Turn an error code into a message the user can understand."""
     return ERROR_MESSAGES.get(error_code, "Something went wrong (" + str(error_code) + ").")
 
 
@@ -65,6 +66,7 @@ def setup_logging() -> bool:
 # ===========================================================================
 
 def handle_create_profile(active_profile: dict | None) -> dict | None:
+    """Ask for a new profile, save it and make it the active profile."""
     loaded = data_manager.load_profiles(DATA_DIR)
     if not loaded["ok"]:
         io_manager.show_message("Saved profiles could not be loaded. "
@@ -82,6 +84,7 @@ def handle_create_profile(active_profile: dict | None) -> dict | None:
 
 
 def handle_select_profile(active_profile: dict | None) -> dict | None:
+    """Show the saved profiles and switch to the one the user picks."""
     loaded = data_manager.load_profiles(DATA_DIR)
     if not loaded["ok"]:
         io_manager.show_message(error_text(loaded["error_code"]))
@@ -120,6 +123,7 @@ def save_with_retry(record: dict) -> None:
 
 
 def handle_analyse(active_profile: dict) -> dict:
+    """Send one product through I/O, AI, Logic and Data, then show and save the result."""
     # 1. INPUT: product name first, so repeats are caught before typing the whole label
     product_name = io_manager.collect_product_name(active_profile)
     previous = count_previous_analyses(product_name, active_profile["profile_name"])
@@ -171,6 +175,7 @@ def handle_analyse(active_profile: dict) -> dict:
 
 
 def handle_history(active_profile: dict) -> dict:
+    """Show past analyses for the active profile and let the user view or delete one."""
     # History only READS saved records: no AI call, no new flags, no re-saving.
     loaded = data_manager.load_history(DATA_DIR)
     if not loaded["ok"]:
@@ -199,6 +204,7 @@ def delete_saved_analysis(record: dict) -> None:
 
 
 def handle_update_profile(active_profile: dict) -> dict:
+    """Change the goal or target of the active profile. Old analyses keep their old target."""
     updated = io_manager.update_profile(active_profile)
     if updated is None:
         io_manager.show_message("Update cancelled.")
@@ -212,6 +218,7 @@ def handle_update_profile(active_profile: dict) -> dict:
 
 
 def handle_delete_profile(active_profile: dict | None) -> dict | None:
+    """Delete the active profile and its saved analyses after the user confirms."""
     if active_profile is None:
         io_manager.show_message("Please create or select a profile first.")
         return active_profile
@@ -249,6 +256,7 @@ NEEDS_PROFILE = ("3", "4", "5", "6")
 
 
 def main() -> None:
+    """Load the saved data, then keep showing the menu until the user exits."""
     if not setup_logging():
         io_manager.show_message("Warning: the log file could not be created. "
                                 "NutriLenz will run, but errors will not be logged.")
