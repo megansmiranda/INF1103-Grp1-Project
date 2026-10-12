@@ -12,14 +12,12 @@ import ai_manager
 from sample_data import (SAMPLE_PROFILES, SAMPLE_PRODUCTS, RAW_VALID, RAW_FENCED,
                          RAW_NOT_JSON, RAW_LIST, SAMPLE_AI_RESPONSES)
 
-# All output goes through io_manager. Until the I/O branch is merged,
 # fall back to the built-in display so this test can run on its own.
 try:
     from io_manager import show_message
 except ImportError:
     show_message = print
 
-# Logic is optional here: if it is merged, the live demo also shows the final flags.
 try:
     import logic_manager
 except ImportError:
