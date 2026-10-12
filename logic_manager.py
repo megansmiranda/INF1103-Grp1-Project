@@ -1,17 +1,3 @@
-"""
-logic_manager.py - LOGIC LAYER (owners: Logic Person A and Person B)
-
-Map goals, compare the selected nutrient and check unusual nutrition values.
-evaluate_target() returns MET, MISMATCH or MISSING without inspecting AI output.
-Invalid internal data raises ValueError with a reason for main.py to pass to I/O.
-Unusual-value warnings use team-agreed limits supplied by the caller.
-
-Person B checks the validated AI fields and combines the results into final
-flags: GOAL_MISMATCH, CLAIM_REVIEW, MANUAL_REVIEW or GOOD_MATCH.
-Numeric mismatch is independent of AI alignment. Review blocks GOOD_MATCH.
-No printing, keyboard input, API calls or file access here.
-"""
-
 import math
 
 # Goal -> which nutrient to check, and whether the target is a MAX or a MIN
