@@ -116,6 +116,74 @@ def test_inputs_not_modified():
     assert (product, profile, ai) == before
 
 
+# ---------------------------------------------------------------------------
+# Each public logic_manager function tested on its own
+# ---------------------------------------------------------------------------
+
+def expect_value_error(function, *args):
+    """Helper: assert that calling function(*args) raises ValueError."""
+    try:
+        function(*args)
+    except ValueError:
+        return
+    raise AssertionError(function.__name__ + " should have raised ValueError")
+
+
+def test_get_goal_rule():
+    assert logic_manager.get_goal_rule("REDUCE_SUGAR")["direction"] == "MAX"
+    assert logic_manager.get_goal_rule("HIGH_PROTEIN")["nutrient_key"] == "protein_g"
+    assert logic_manager.get_goal_rule("LOWER_SODIUM")["unit"] == "mg_per_serving"
+    expect_value_error(logic_manager.get_goal_rule, "LOSE_WEIGHT")      # unknown goal
+
+
+def test_needs_manual_review():
+    ai = deepcopy(SAMPLE_AI_RESPONSES["aligned_no_claim"])             # HIGH, ALIGNED, NO_CLAIM
+    assert logic_manager.needs_manual_review("MET", ai) is False
+    assert logic_manager.needs_manual_review("MISSING", ai) is True     # value not on label
+    ai["confidence"] = "LOW"
+    assert logic_manager.needs_manual_review("MET", ai) is True
+    ai = deepcopy(SAMPLE_AI_RESPONSES["aligned_no_claim"])
+    ai["claim_status"] = "INSUFFICIENT_INFORMATION"
+    assert logic_manager.needs_manual_review("MET", ai) is True
+
+
+def test_needs_claim_review_needs_all_three_conditions():
+    product = deepcopy(SAMPLE_PRODUCTS["cereal"])                       # has a claim
+    ai = deepcopy(SAMPLE_AI_RESPONSES["questionable_high"])             # QUESTIONABLE + HIGH
+    assert logic_manager.needs_claim_review(product, ai) is True
+    ai["confidence"] = "MEDIUM"
+    assert logic_manager.needs_claim_review(product, ai) is True
+    ai["confidence"] = "LOW"                                            # low confidence -> no
+    assert logic_manager.needs_claim_review(product, ai) is False
+    ai = deepcopy(SAMPLE_AI_RESPONSES["questionable_high"])
+    product["marketing_claim"] = "   "                                  # blank claim -> no
+    assert logic_manager.needs_claim_review(product, ai) is False
+
+
+def test_is_good_match_gate():
+    ai = deepcopy(SAMPLE_AI_RESPONSES["aligned_consistent"])
+    assert logic_manager.is_good_match("MET", False, False, ai) is True
+    assert logic_manager.is_good_match("MISMATCH", False, False, ai) is False
+    assert logic_manager.is_good_match("MET", True, False, ai) is False   # manual review
+    assert logic_manager.is_good_match("MET", False, True, ai) is False   # claim review
+    ai["goal_alignment"] = "MIXED"
+    assert logic_manager.is_good_match("MET", False, False, ai) is False
+
+
+def test_check_unusual_numbers():
+    product = deepcopy(SAMPLE_PRODUCTS["noodles"])                      # sodium 1450 mg
+    assert logic_manager.check_unusual_numbers(product) == []           # no limits -> no warnings
+    warnings = logic_manager.check_unusual_numbers(product, {"sodium_mg": 1000})
+    assert len(warnings) == 1 and "Sodium" in warnings[0]
+    assert logic_manager.check_unusual_numbers(product, {"sodium_mg": 2000}) == []
+    missing = deepcopy(SAMPLE_PRODUCTS["missing_sugar"])                # None is skipped
+    assert logic_manager.check_unusual_numbers(missing, {"sugar_g": 1}) == []
+    expect_value_error(logic_manager.check_unusual_numbers, product, {"fat_g": 10})
+    expect_value_error(logic_manager.check_unusual_numbers, product, {"sodium_mg": -5})
+    product["nutrition"]["sugar_g"] = -1                                # bad label data
+    expect_value_error(logic_manager.check_unusual_numbers, product)
+
+
 def run_tests():
     tests = [
         test_sugar_max_boundaries, test_protein_min_boundaries, test_sodium_max_boundaries,
@@ -125,6 +193,9 @@ def run_tests():
         test_missing_nutrient_gives_manual_review, test_good_match_no_claim,
         test_good_match_consistent_claim, test_low_confidence_blocks_good_match,
         test_mixed_alignment_gives_no_flags, test_inputs_not_modified,
+        test_get_goal_rule, test_needs_manual_review,
+        test_needs_claim_review_needs_all_three_conditions, test_is_good_match_gate,
+        test_check_unusual_numbers,
     ]
     for test in tests:
         test()
