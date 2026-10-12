@@ -187,7 +187,6 @@ def handle_history(active_profile):
 
 def delete_saved_analysis(record):
     """The user has already confirmed in io_manager. Data does the file change."""
-    # TODO: call data_manager.delete_analysis directly once the Data branch adds it
     delete_analysis = getattr(data_manager, "delete_analysis", None)
     if delete_analysis is None:
         io_manager.show_message("Deleting saved analyses is not available yet. Nothing was deleted.")
