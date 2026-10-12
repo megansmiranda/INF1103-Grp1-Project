@@ -41,7 +41,9 @@ def load_env_file(path=None):
     if not env_path.exists():
         return
     try:
-        text = env_path.read_text(encoding="utf-8")
+        # utf-8-sig also strips the invisible BOM some Windows editors add, which
+        # would otherwise become part of the first key name (e.g. GEMINI_API_KEY)
+        text = env_path.read_text(encoding="utf-8-sig")
     except (OSError, UnicodeDecodeError) as error:
         # A damaged .env must not crash the import; analyse_product reports
         # CONFIGURATION_ERROR later if no API key could be found.
