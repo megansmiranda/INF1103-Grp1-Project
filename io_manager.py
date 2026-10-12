@@ -1,16 +1,3 @@
-"""
-io_manager.py - INPUT / OUTPUT LAYER  (owner: I/O Person A + Person B)
-
-This is the ONLY file in the project allowed to use print() and input().
-Its jobs:
-  1. Ask the user for data and VALIDATE it (reject + re-prompt on bad input).
-  2. Return clean Python dictionaries to main.py.
-  3. Display menus, single records (show_analysis) and list/summary views
-     (select_profile, show_history).
-
-It never calls the AI, never decides flags and never reads/writes files.
-"""
-
 import math
 import textwrap
 from datetime import datetime
