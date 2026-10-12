@@ -37,7 +37,7 @@ QUIT = object()
 # PERSON A - A1/A2: reusable input helpers
 # ===========================================================================
 
-def read_required_text(prompt, allow_quit=False):
+def read_required_text(prompt: str, allow_quit: bool = False) -> str | object:
     """Keep asking until the user types something that is not blank.
     Returns the text with outer spaces removed."""
     while True:
@@ -49,7 +49,7 @@ def read_required_text(prompt, allow_quit=False):
         print("  This field cannot be empty. Please try again.")
 
 
-def read_optional_text(prompt):
+def read_optional_text(prompt: str) -> str | None:
     """Ask for optional text. Blank input returns None (meaning 'not given')."""
     while True:
         text = input(prompt).strip()
@@ -60,7 +60,7 @@ def read_optional_text(prompt):
         print("  Please type your answer, or type 'none' to skip.")
 
 
-def read_choice(prompt, allowed_choices, allow_quit=False):
+def read_choice(prompt: str, allowed_choices: list[str], allow_quit: bool = False) -> str | object:
     """Keep asking until the answer is one of allowed_choices (a list of strings)."""
     while True:
         choice = input(prompt).strip()
@@ -71,7 +71,7 @@ def read_choice(prompt, allowed_choices, allow_quit=False):
         print("  Invalid choice. Please enter one of: " + ", ".join(allowed_choices))
 
 
-def read_yes_no(prompt):
+def read_yes_no(prompt: str) -> bool:
     """Ask a yes/no question. Returns True for yes, False for no."""
     while True:
         answer = input(prompt).strip().casefold()
@@ -82,7 +82,8 @@ def read_yes_no(prompt):
         print("  Invalid choice. Please enter Y/Yes or N/No.")
 
 
-def read_number(prompt, allow_missing=False, allow_zero=False, max_value=None, allow_quit=False):
+def read_number(prompt: str, allow_missing: bool = False, allow_zero: bool = False,
+                max_value: float | None = None, allow_quit: bool = False) -> float | None | object:
     """Ask for a number and validate it.
 
     allow_missing=True -> blank input returns None (value not on label)
@@ -134,7 +135,7 @@ def read_number(prompt, allow_missing=False, allow_zero=False, max_value=None, a
         return value
 
 
-def read_ingredient_list(prompt, allow_quit=False):
+def read_ingredient_list(prompt: str, allow_quit: bool = False) -> list[str] | object:
     """Read comma-separated words into a clean list.
     The user must type 'none' for an empty list."""
     while True:
@@ -149,7 +150,7 @@ def read_ingredient_list(prompt, allow_quit=False):
         print("  Please list the ingredients, or type 'none'.")
 
 
-def _is_quit(text, allow_quit):
+def _is_quit(text: str, allow_quit: bool) -> bool:
     """True if quitting is allowed and the user typed 'quit' (any case)."""
     return allow_quit and text.strip().lower() == "quit"
 
@@ -157,7 +158,7 @@ def _is_quit(text, allow_quit):
 # PERSON A - A3/A4: profiles
 # ===========================================================================
 
-def _ask_goal_and_target(allow_quit=False):
+def _ask_goal_and_target(allow_quit: bool = False) -> tuple[str, float, str] | object:
     """Shared by create and update: ask for goal + numeric target.
     Returns (goal_code, target_value, unit_code), or QUIT."""
     print("  1. Reduce Sugar   2. High Protein   3. Lower Sodium")
@@ -174,7 +175,7 @@ def _ask_goal_and_target(allow_quit=False):
     return goal, target, info["unit_code"]
 
 
-def collect_profile(existing_profiles):
+def collect_profile(existing_profiles: list[dict]) -> dict | None:
     """Ask for a brand new profile. Returns a profile dictionary
     (NOT saved yet - main.py asks data_manager to save it).
     Existing profiles are supplied so duplicate names can be rejected immediately."""
@@ -204,19 +205,19 @@ def collect_profile(existing_profiles):
         "avoid_ingredients": avoid,
     }
 
-def _cancel_profile():
+def _cancel_profile() -> None:
     print("Profile creation cancelled.")
     return None
 
 
-def describe_target(profile):
+def describe_target(profile: dict) -> str:
     """Return text such as 'maximum 10 g sugar per serving'."""
     info = GOAL_INFO[profile["primary_goal"]]
     return "{} {:g} {} {} per serving".format(
         info["direction"], profile["target_value"], info["unit"], info["nutrient"])
 
 
-def select_profile(profiles):
+def select_profile(profiles: list[dict]) -> dict | None:
     """LIST VIEW: show saved profiles and let the user pick one.
     Returns the chosen profile dictionary, or None for Back / empty list."""
     if not profiles:
@@ -237,7 +238,7 @@ def select_profile(profiles):
     return profiles[int(choice) - 1]
 
 
-def update_profile(profile):
+def update_profile(profile: dict) -> dict | None:
     """Ask for new goal/target and how to handle avoided ingredients.
     Returns a NEW dictionary (the original is not changed), or None if cancelled.
     The profile name stays the same so saved history still matches."""
@@ -281,7 +282,7 @@ def update_profile(profile):
     return updated
 
 
-def confirm_delete_profile(profile, analysis_count):
+def confirm_delete_profile(profile: dict, analysis_count: int) -> bool:
     """Ask for explicit confirmation before deleting the current profile and its history."""
     print("\n--- DELETE CURRENT PROFILE ---")
     print("Profile: {} | {}".format(profile["profile_name"], describe_target(profile)))
@@ -294,7 +295,7 @@ def confirm_delete_profile(profile, analysis_count):
 # PERSON A - A5: menu and messages
 # ===========================================================================
 
-def show_main_menu(active_profile):
+def show_main_menu(active_profile: dict | None) -> str:
     """Display the main menu once and return the user's choice as a string."""
     name = active_profile["profile_name"] if active_profile else "None"
     choices = ["0", "1", "2", "3", "4", "5"]
@@ -314,7 +315,7 @@ def show_main_menu(active_profile):
     return read_choice("Choose: ", choices)
 
 
-def show_message(message):
+def show_message(message: str) -> None:
     """Print any message given by main.py (the only way other files 'talk')."""
     print(message)
 
@@ -323,7 +324,7 @@ def show_message(message):
 # PERSON B - B1/B2: product entry and confirmation
 # ===========================================================================
 
-def _fmt(value, unit):
+def _fmt(value: float | None, unit: str) -> str:
     """Show a nutrition value, or 'Not provided' when it is None.
     (We check 'is None' so that 0 is still shown as 0.)"""
     if value is None:
@@ -331,14 +332,14 @@ def _fmt(value, unit):
     return "{:g} {}".format(value, unit)
 
 
-def collect_product_name(profile):
+def collect_product_name(profile: dict) -> str:
     """Ask for the product name before collecting the rest of its label."""
     print("\n--- ANALYSE A PRODUCT ---")
     print("Profile: {} | {}".format(profile["profile_name"], describe_target(profile)))
     return read_required_text("Product name: ")
 
 
-def confirm_repeat_analysis(product_name, previous_count):
+def confirm_repeat_analysis(product_name: str, previous_count: int) -> bool:
     """Ask whether to continue after a product reaches the repeat-analysis threshold."""
     prompt = ("You have analysed {} {} times with this profile.\n"
               "Would you like to analyse it again? (Y/Yes or N/No): ").format(
@@ -346,7 +347,7 @@ def confirm_repeat_analysis(product_name, previous_count):
     return read_yes_no(prompt)
 
 
-def collect_product(profile, product_name):
+def collect_product(profile: dict, product_name: str) -> dict | None:
     """Ask for one product label. Returns a product dictionary,
     or None if the user answers no at the confirmation step."""
     print("Enter nutrition values PER SERVING. Press Enter if a value is not on the label.")
@@ -373,7 +374,7 @@ def collect_product(profile, product_name):
     return None
 
 
-def confirm_product(product, profile):
+def confirm_product(product: dict, profile: dict) -> bool:
     """Show a summary of what was typed and ask yes/no. Returns True or False."""
     n = product["nutrition"]
     print("\n--- PLEASE CONFIRM ---")
@@ -394,7 +395,7 @@ def confirm_product(product, profile):
 # PERSON B - B3: display ONE analysis record
 # ===========================================================================
 
-def show_analysis(record):
+def show_analysis(record: dict) -> None:
     """RECORD VIEW: display a completed (new or saved) analysis.
     Uses record['profile_snapshot'] so old records show the OLD target."""
     snap = record["profile_snapshot"]
@@ -444,7 +445,7 @@ def show_analysis(record):
 # PERSON B - B4: history list (summary view)
 # ===========================================================================
 
-def show_history(records, active_profile):
+def show_history(records: list[dict], active_profile: dict) -> tuple[str, dict | None]:
     """LIST VIEW: show past analyses for this profile.
     Returns (action, record), or ("back", None) for Back / no records."""
     if not records:
@@ -498,6 +499,6 @@ def show_history(records, active_profile):
         return "delete", record
     return "view", records[int(choice) - 1]
 
-def confirm_delete_analysis(record):
+def confirm_delete_analysis(record: dict) -> bool:
     """Ask for explicit confirmation before deleting a saved analysis."""
     return read_yes_no("Delete the analysis for {}? (Y/Yes or N/No): ".format(record["product_name"]))
