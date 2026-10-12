@@ -1,5 +1,7 @@
 # NutriLenz — AI Food Label Interpreter (CLI)
 
+[![CI](https://github.com/megansmiranda/INF1103-Grp1-Project/actions/workflows/ci.yml/badge.svg)](https://github.com/megansmiranda/INF1103-Grp1-Project/actions/workflows/ci.yml)
+
 INF1103 LAB-P12 Group 1 · Repository: https://github.com/megansmiranda/INF1103-Grp1-Project
 
 NutriLenz helps university students and young adults in Singapore understand packaged
@@ -134,6 +136,14 @@ docker run --rm -it --env-file .env -v nutrilenz-data:/app/data nutrilenz
 ```
 The named volume keeps your profiles and history between runs.
 
+### Continuous integration (GitHub Actions)
+Every push to `main` and every pull request runs `.github/workflows/ci.yml` on GitHub:
+1. checks the code contains no `class` definitions,
+2. builds the Docker image,
+3. runs `test_logic.py`, `test_data.py` and `test_ai_manager.py` **inside the container**.
+
+No API key is needed. A pull request should only be merged when its CI check is green.
+
 ---
 
 ## 5. How the school requirements are met
@@ -153,6 +163,7 @@ The named volume keeps your profiles and history between runs.
 | Same output across runs | AI temperature = 0; rules are deterministic; history is replayed from JSON |
 | Logic test script without API | `test_logic.py` |
 | Docker | `Dockerfile`, `.dockerignore` |
+| CI/CD | `.github/workflows/ci.yml` builds the image and runs all tests in Docker on every push and PR |
 
 ---
 
