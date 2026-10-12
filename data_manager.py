@@ -1,20 +1,3 @@
-"""
-data_manager.py - DATA LAYER  (owner: Data Manager)
-
-The system's memory across runs. Stores two JSON files in the data folder:
-  profiles.json  - list of user profiles
-  analyses.json  - list of completed analyses (with a snapshot of the profile)
-
-Every load/save function returns a status envelope:
-  success: {"ok": True,  "data": [...],  "error_code": None}
-  failure: {"ok": False, "data": None,   "error_code": "CORRUPT_DATA"}
-
-Error codes: CORRUPT_DATA, READ_ERROR, WRITE_ERROR, DUPLICATE_PROFILE, PROFILE_NOT_FOUND
-A MISSING file is normal on first run (empty list). A BROKEN file is an error and
-is never overwritten, so the user does not silently lose data.
-No printing, no keyboard input, no AI calls here.
-"""
-
 import json
 import os
 from copy import deepcopy
