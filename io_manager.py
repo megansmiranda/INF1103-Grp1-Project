@@ -476,60 +476,82 @@ def show_analysis(record: dict) -> None:
 # PERSON B - B4: history list (summary view)
 # ===========================================================================
 
+class HistoryIOManager:
+    """Display saved analyses and collect history-related user choices."""
+
+    def show_history(self, records: list[dict],
+                     active_profile: dict) -> tuple[str, dict | None]:
+        """Show analyses and return the selected action and record."""
+        if not records:
+            print("No previous analyses for this profile.")
+            return "back", None
+
+        print("\n--- PREVIOUS ANALYSES | {} ---".format(active_profile["profile_name"]))
+        for number, record in enumerate(records, start=1):
+            brand = record["brand"] or "Not provided"
+            timestamp = self._format_timestamp(record.get("analysed_at"))
+
+            goal = GOAL_INFO[record["profile_snapshot"]["primary_goal"]]["label"]
+            flags = ", ".join(
+                FLAG_DESCRIPTIONS.get(flag, flag.replace("_", " ").title())
+                for flag in record["flags"]
+            ) or "No flags"
+            print("{}. {} | {} | {}".format(
+                number, record["product_name"], brand, timestamp))
+            print("   {} | {}".format(goal, flags))
+        print("0. Back")
+        print("D. Delete an analysis")
+
+        allowed = [str(n) for n in range(0, len(records) + 1)]
+        choice = read_choice("Select an analysis or choose an option: ", allowed + ["D", "d"])
+        if choice == "0":
+            return "back", None
+        if choice.upper() == "D":
+            print("Select an analysis to delete:")
+            delete_choice = read_choice("Analysis number (0 to cancel): ", allowed)
+            if delete_choice == "0":
+                return "back", None
+            record = records[int(delete_choice) - 1]
+            if not self.confirm_delete_analysis(record):
+                print("Deletion cancelled.")
+                return "back", None
+            return "delete", record
+        return "view", records[int(choice) - 1]
+
+    @staticmethod
+    def _format_timestamp(timestamp: str | None) -> str:
+        """Format saved timestamps for the history list; label missing dates."""
+        if not timestamp:
+            return "Date unavailable"
+
+        try:
+            analysed_at = datetime.fromisoformat(timestamp)
+        except (TypeError, ValueError):
+            return timestamp
+
+        date_format = "%d %b %Y %H:%M"
+        if analysed_at.second or analysed_at.microsecond:
+            date_format += ":%S"
+        formatted = analysed_at.strftime(date_format)
+        if analysed_at.utcoffset() is not None:
+            offset = analysed_at.strftime("%z")
+            formatted += " {}:{}".format(offset[:3], offset[3:])
+        return formatted
+
+    @staticmethod
+    def confirm_delete_analysis(record: dict) -> bool:
+        """Ask for explicit confirmation before deleting a saved analysis."""
+        return read_yes_no(
+            "Delete the analysis for {}? (Y/Yes or N/No): ".format(record["product_name"]))
+
+
+_history_io_manager = HistoryIOManager()
+
+
+# Keep main.py's existing module-level history calls working through the class.
 def show_history(records: list[dict], active_profile: dict) -> tuple[str, dict | None]:
-    """LIST VIEW: show past analyses for this profile.
-    Returns (action, record), or ("back", None) for Back / no records."""
-    if not records:
-        print("No previous analyses for this profile.")
-        return "back", None
+    return _history_io_manager.show_history(records, active_profile)
 
-    print("\n--- PREVIOUS ANALYSES | {} ---".format(active_profile["profile_name"]))
-    for number, record in enumerate(records, start=1):
-        brand = record["brand"] or "Not provided"
-        timestamp = record.get("analysed_at")
-        if timestamp:
-            try:
-                analysed_at = datetime.fromisoformat(timestamp)
-            except (TypeError, ValueError):
-                analysed_at = None
-            if analysed_at is not None:
-                date_format = "%d %b %Y %H:%M"
-                if analysed_at.second or analysed_at.microsecond:
-                    date_format += ":%S"
-                timestamp = analysed_at.strftime(date_format)
-                if analysed_at.utcoffset() is not None:
-                    offset = analysed_at.strftime("%z")
-                    timestamp += " {}:{}".format(offset[:3], offset[3:])
-        else:
-            timestamp = "Date unavailable"
-
-        goal = GOAL_INFO[record["profile_snapshot"]["primary_goal"]]["label"]
-        flags = ", ".join(
-            FLAG_DESCRIPTIONS.get(flag, flag.replace("_", " ").title())
-            for flag in record["flags"]
-        ) or "No flags"
-        print("{}. {} | {} | {}".format(
-            number, record["product_name"], brand, timestamp))
-        print("   {} | {}".format(goal, flags))
-    print("0. Back")
-    print("D. Delete an analysis")
-
-    allowed = [str(n) for n in range(0, len(records) + 1)]
-    choice = read_choice("Select an analysis or choose an option: ", allowed + ["D", "d"])
-    if choice == "0":
-        return "back", None
-    if choice.upper() == "D":
-        print("Select an analysis to delete:")
-        delete_choice = read_choice("Analysis number (0 to cancel): ", allowed)
-        if delete_choice == "0":
-            return "back", None
-        record = records[int(delete_choice) - 1]
-        if not confirm_delete_analysis(record):
-            print("Deletion cancelled.")
-            return "back", None
-        return "delete", record
-    return "view", records[int(choice) - 1]
 
 def confirm_delete_analysis(record: dict) -> bool:
-    """Ask for explicit confirmation before deleting a saved analysis."""
-    return read_yes_no("Delete the analysis for {}? (Y/Yes or N/No): ".format(record["product_name"]))
+    return _history_io_manager.confirm_delete_analysis(record)
