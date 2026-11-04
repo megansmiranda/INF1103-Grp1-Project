@@ -416,51 +416,61 @@ def confirm_product(product: dict, profile: dict) -> bool:
 # PERSON B - B3: display ONE analysis record
 # ===========================================================================
 
+class AnalysisDisplayIOManager:
+    """Display the details and interpretation for one completed analysis."""
+
+    def show_analysis(self, record: dict) -> None:
+        """Display a new or saved analysis using its saved profile snapshot."""
+        snap = record["profile_snapshot"]
+        info = GOAL_INFO[snap["primary_goal"]]
+        ai = record["ai_analysis"]
+        n = record["nutrition"]
+
+        print("\n" + LINE)
+        print(" NUTRILENZ ANALYSIS | " + record["product_name"])
+        print(LINE)
+        if record.get("analysed_at"):
+            print("Analysed on  : " + record["analysed_at"])
+        print("Profile used : {} | {}".format(snap["profile_name"], info["label"]))
+        print("Target used  : " + describe_target(snap))
+        print("Nutrition    : Sugar {} | Protein {} | Sodium {} (per serving)".format(
+            _fmt(n["sugar_g"], "g"), _fmt(n["protein_g"], "g"), _fmt(n["sodium_mg"], "mg")))
+        print("Claim        : " + (record["marketing_claim"] or "None"))
+
+        # Flags come from logic_manager; this class only presents them.
+        print("\nFLAGS:")
+        if record["flags"]:
+            for flag in record["flags"]:
+                print("  [{}] {}".format(flag, FLAG_DESCRIPTIONS.get(flag, "")))
+        else:
+            print("  No positive match issued; see the interpretation below.")
+
+        print("\nAI INTERPRETATION:")
+        print("  Goal alignment : " + ai["goal_alignment"])
+        print("  Claim status   : " + ai["claim_status"])
+        print("  Confidence     : " + ai["confidence"])
+        relevant = ", ".join(ai["relevant_ingredients"]) or "None identified"
+        print("  Relevant ingredients: " + relevant)
+        print("  Evidence:")
+        if ai["evidence"]:
+            for item in ai["evidence"]:
+                print(textwrap.fill(item, width=70, initial_indent="    - ",
+                                    subsequent_indent="      "))
+        else:
+            print("    - None supplied")
+        print("  Explanation:")
+        print(textwrap.fill(ai["explanation"], width=70, initial_indent="    ",
+                            subsequent_indent="    "))
+        print(LINE)
+
+
+_analysis_display_io_manager = AnalysisDisplayIOManager()
+
+
+# Preserve main.py's existing module-level call while the display logic is
+# managed by AnalysisDisplayIOManager.
 def show_analysis(record: dict) -> None:
-    """RECORD VIEW: display a completed (new or saved) analysis.
-    Uses record['profile_snapshot'] so old records show the OLD target."""
-    snap = record["profile_snapshot"]
-    info = GOAL_INFO[snap["primary_goal"]]
-    ai = record["ai_analysis"]
-    n = record["nutrition"]
-
-    print("\n" + LINE)
-    print(" NUTRILENZ ANALYSIS | " + record["product_name"])
-    print(LINE)
-    if record.get("analysed_at"):
-        print("Analysed on  : " + record["analysed_at"])
-    print("Profile used : {} | {}".format(snap["profile_name"], info["label"]))
-    print("Target used  : " + describe_target(snap))
-    print("Nutrition    : Sugar {} | Protein {} | Sodium {} (per serving)".format(
-        _fmt(n["sugar_g"], "g"), _fmt(n["protein_g"], "g"), _fmt(n["sodium_mg"], "mg")))
-    print("Claim        : " + (record["marketing_claim"] or "None"))
-
-    # Flags decided by logic_manager - we only display them
-    print("\nFLAGS:")
-    if record["flags"]:
-        for flag in record["flags"]:
-            print("  [{}] {}".format(flag, FLAG_DESCRIPTIONS.get(flag, "")))
-    else:
-        print("  No positive match issued; see the interpretation below.")
-
-    # AI interpretation fields
-    print("\nAI INTERPRETATION:")
-    print("  Goal alignment : " + ai["goal_alignment"])
-    print("  Claim status   : " + ai["claim_status"])
-    print("  Confidence     : " + ai["confidence"])
-    relevant = ", ".join(ai["relevant_ingredients"]) or "None identified"
-    print("  Relevant ingredients: " + relevant)
-    print("  Evidence:")
-    if ai["evidence"]:
-        for item in ai["evidence"]:
-            print(textwrap.fill(item, width=70, initial_indent="    - ",
-                                subsequent_indent="      "))
-    else:
-        print("    - None supplied")
-    print("  Explanation:")
-    print(textwrap.fill(ai["explanation"], width=70, initial_indent="    ",
-                        subsequent_indent="    "))
-    print(LINE)
+    _analysis_display_io_manager.show_analysis(record)
 
 # ===========================================================================
 # PERSON B - B4: history list (summary view)
