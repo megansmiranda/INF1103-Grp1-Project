@@ -332,63 +332,84 @@ def _fmt(value: float | None, unit: str) -> str:
     return "{:g} {}".format(value, unit)
 
 
+class ProductIOManager:
+    """Collect and confirm product details for analysis."""
+
+    def collect_product_name(self, profile: dict) -> str:
+        """Ask for the product name before collecting the rest of its label."""
+        print("\n--- ANALYSE A PRODUCT ---")
+        print("Profile: {} | {}".format(profile["profile_name"], describe_target(profile)))
+        return read_required_text("Product name: ")
+
+    def confirm_repeat_analysis(self, product_name: str, previous_count: int) -> bool:
+        """Ask whether to continue after a product reaches the repeat-analysis threshold."""
+        prompt = ("You have analysed {} {} times with this profile.\n"
+                  "Would you like to analyse it again? (Y/Yes or N/No): ").format(
+                      product_name, previous_count)
+        return read_yes_no(prompt)
+
+    def collect_product(self, profile: dict, product_name: str) -> dict | None:
+        """Ask for one product label. Returns a product dictionary,
+        or None if the user answers no at the confirmation step."""
+        print("Enter nutrition values PER SERVING. Press Enter if a value is not on the label.")
+
+        brand = read_optional_text("Brand (optional): ")
+        category = read_optional_text("Category (optional): ")
+        sugar = read_number("Sugar per serving (g; 'none' if missing): ", allow_missing=True, allow_zero=True, max_value=MAX_SUGAR_G)
+        protein = read_number("Protein per serving (g; 'none' if missing): ", allow_missing=True, allow_zero=True, max_value=MAX_PROTEIN_G)
+        sodium = read_number("Sodium per serving (mg; 'none' if missing): ", allow_missing=True, allow_zero=True, max_value=MAX_SODIUM_MG)
+        ingredients = read_required_text("Ingredients (copy from label): ")
+        claim = read_optional_text("Marketing claim (optional, e.g. 'Low Sugar'): ")
+
+        product = {
+            "product_name": product_name,
+            "brand": brand,
+            "category": category,
+            "nutrition": {"sugar_g": sugar, "protein_g": protein, "sodium_mg": sodium},
+            "ingredient_text": ingredients,
+            "marketing_claim": claim,
+        }
+
+        if self.confirm_product(product, profile):
+            return product
+        return None
+
+    def confirm_product(self, product: dict, profile: dict) -> bool:
+        """Show a summary of what was typed and ask yes/no. Returns True or False."""
+        n = product["nutrition"]
+        print("\n--- PLEASE CONFIRM ---")
+        print("Profile: {} | {}".format(profile["profile_name"], describe_target(profile)))
+        print("Product: {} | Brand: {} | Category: {}".format(
+            product["product_name"], product["brand"] or "Not provided",
+            product["category"] or "Not provided"))
+        print("Ingredients: " + product["ingredient_text"])
+        print("Sugar: {} | Protein: {} | Sodium: {} (per serving)".format(
+            _fmt(n["sugar_g"], "g"), _fmt(n["protein_g"], "g"), _fmt(n["sodium_mg"], "mg")))
+        print("Marketing claim: " + (product["marketing_claim"] or "None"))
+        avoid = profile["avoid_ingredients"]
+        print("Ingredients to avoid: " + (", ".join(avoid) if avoid else "No avoidance preferences entered"))
+        return read_yes_no("Analyse this product? (Y/Yes or N/No): ")
+
+
+_product_io_manager = ProductIOManager()
+
+
+# Keep the existing main.py function calls working while their implementation
+# is handled by the ProductIOManager instance above.
 def collect_product_name(profile: dict) -> str:
-    """Ask for the product name before collecting the rest of its label."""
-    print("\n--- ANALYSE A PRODUCT ---")
-    print("Profile: {} | {}".format(profile["profile_name"], describe_target(profile)))
-    return read_required_text("Product name: ")
+    return _product_io_manager.collect_product_name(profile)
 
 
 def confirm_repeat_analysis(product_name: str, previous_count: int) -> bool:
-    """Ask whether to continue after a product reaches the repeat-analysis threshold."""
-    prompt = ("You have analysed {} {} times with this profile.\n"
-              "Would you like to analyse it again? (Y/Yes or N/No): ").format(
-                  product_name, previous_count)
-    return read_yes_no(prompt)
+    return _product_io_manager.confirm_repeat_analysis(product_name, previous_count)
 
 
 def collect_product(profile: dict, product_name: str) -> dict | None:
-    """Ask for one product label. Returns a product dictionary,
-    or None if the user answers no at the confirmation step."""
-    print("Enter nutrition values PER SERVING. Press Enter if a value is not on the label.")
-
-    brand = read_optional_text("Brand (optional): ")
-    category = read_optional_text("Category (optional): ")
-    sugar = read_number("Sugar per serving (g; 'none' if missing): ", allow_missing=True, allow_zero=True, max_value=MAX_SUGAR_G)
-    protein = read_number("Protein per serving (g; 'none' if missing): ", allow_missing=True, allow_zero=True, max_value=MAX_PROTEIN_G)
-    sodium = read_number("Sodium per serving (mg; 'none' if missing): ", allow_missing=True, allow_zero=True, max_value=MAX_SODIUM_MG)
-    ingredients = read_required_text("Ingredients (copy from label): ")
-    claim = read_optional_text("Marketing claim (optional, e.g. 'Low Sugar'): ")
-
-    product = {
-        "product_name": product_name,
-        "brand": brand,
-        "category": category,
-        "nutrition": {"sugar_g": sugar, "protein_g": protein, "sodium_mg": sodium},
-        "ingredient_text": ingredients,
-        "marketing_claim": claim,
-    }
-
-    if confirm_product(product, profile):
-        return product
-    return None
+    return _product_io_manager.collect_product(profile, product_name)
 
 
 def confirm_product(product: dict, profile: dict) -> bool:
-    """Show a summary of what was typed and ask yes/no. Returns True or False."""
-    n = product["nutrition"]
-    print("\n--- PLEASE CONFIRM ---")
-    print("Profile: {} | {}".format(profile["profile_name"], describe_target(profile)))
-    print("Product: {} | Brand: {} | Category: {}".format(
-        product["product_name"], product["brand"] or "Not provided",
-        product["category"] or "Not provided"))
-    print("Ingredients: " + product["ingredient_text"])
-    print("Sugar: {} | Protein: {} | Sodium: {} (per serving)".format(
-        _fmt(n["sugar_g"], "g"), _fmt(n["protein_g"], "g"), _fmt(n["sodium_mg"], "mg")))
-    print("Marketing claim: " + (product["marketing_claim"] or "None"))
-    avoid = profile["avoid_ingredients"]
-    print("Ingredients to avoid: " + (", ".join(avoid) if avoid else "No avoidance preferences entered"))
-    return read_yes_no("Analyse this product? (Y/Yes or N/No): ")
+    return _product_io_manager.confirm_product(product, profile)
 
 
 # ===========================================================================
