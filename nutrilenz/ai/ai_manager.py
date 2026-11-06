@@ -4,11 +4,12 @@ from typing import Callable
 
 from ..config import AppConfig
 from ..domain.product import Product
+from ..domain.recommendation import RecommendationOptions, ScoredProduct
 from ..domain.user import Profile
 from ..errors import AIError
 from .providers import AIProvider, GeminiProvider, GroqProvider, HttpClient
-from .results import AIResult, LabelImage, LabelReading
-from .tasks import AITask, LabelAnalysisTask, LabelExtractionTask
+from .results import AIResult, LabelImage, LabelReading, RecommendationAdvice
+from .tasks import AITask, LabelAnalysisTask, LabelExtractionTask, RecommendationTask
 from .validation import JsonReplyParser
 
 logger = logging.getLogger("nutrilenz.ai")
@@ -78,9 +79,14 @@ class AIManager:
         logger.error("All AI providers failed for %s. Last error: %s", task.name, last_error)
         raise AIError(last_error)
 
+    # Shortcuts used by the services
     def analyse_label(self, product: Product, profile: Profile) -> AIResult:
         """value is an AIAnalysis."""
         return self.run(LabelAnalysisTask(product, profile))
 
     def read_label_image(self, image: LabelImage) -> LabelReading:
         return self.run(LabelExtractionTask(image)).value
+
+    def advise(self, profile: Profile, options: RecommendationOptions,
+               candidates: list[ScoredProduct]) -> RecommendationAdvice:
+        return self.run(RecommendationTask(profile, options, candidates)).value
