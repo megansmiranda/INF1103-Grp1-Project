@@ -7,8 +7,8 @@ from ..domain.product import Product
 from ..domain.user import Profile
 from ..errors import AIError
 from .providers import AIProvider, GeminiProvider, GroqProvider, HttpClient
-from .results import AIResult
-from .tasks import AITask, LabelAnalysisTask
+from .results import AIResult, LabelImage, LabelReading
+from .tasks import AITask, LabelAnalysisTask, LabelExtractionTask
 from .validation import JsonReplyParser
 
 logger = logging.getLogger("nutrilenz.ai")
@@ -81,3 +81,6 @@ class AIManager:
     def analyse_label(self, product: Product, profile: Profile) -> AIResult:
         """value is an AIAnalysis."""
         return self.run(LabelAnalysisTask(product, profile))
+
+    def read_label_image(self, image: LabelImage) -> LabelReading:
+        return self.run(LabelExtractionTask(image)).value
