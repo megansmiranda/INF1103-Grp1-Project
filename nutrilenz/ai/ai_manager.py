@@ -4,6 +4,7 @@ from typing import Callable
 
 from ..app_config import AppConfig
 from ..domain.product import Product
+from ..domain.dietary_report import DietaryReport
 from ..domain.recommendation_options import RecommendationOptions
 from ..domain.scored_product import ScoredProduct
 from ..domain.profile import Profile
@@ -90,9 +91,10 @@ class AIManager:
         raise AIError(last_error)
 
     # Shortcuts used by the services
-    def analyse_label(self, product: Product, profile: Profile) -> AIResult:
+    def analyse_label(self, product: Product, profile: Profile,
+                      dietary_report: DietaryReport | None = None) -> AIResult:
         """value is an AIAnalysis."""
-        return self.run(LabelAnalysisTask(product, profile))
+        return self.run(LabelAnalysisTask(product, profile, dietary_report))
 
     def read_label_image(self, image: LabelImage) -> LabelReading:
         return self.run(LabelExtractionTask(image)).value

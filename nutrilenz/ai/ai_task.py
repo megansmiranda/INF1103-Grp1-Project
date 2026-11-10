@@ -1,6 +1,9 @@
 import json
+import re
 from abc import ABC, abstractmethod
 
+from ..domain.dietary_keywords import DietaryKeywords
+from ..domain.dietary_report import DietaryReport
 from ..domain.profile import Profile
 from .ai_request import AIRequest
 from .schema_checker import SchemaChecker
@@ -45,3 +48,23 @@ class AITask(ABC):
             word = "keep low" if goal.direction == "MAX" else "get more"
             phrases.append(word + ": " + goal.nutrient.label.lower())
         return phrases
+
+    @staticmethod
+    def _dietary_preferences(profile: Profile) -> list[dict]:
+        return [{"key": check.key, "name": check.label,
+                 "words_to_avoid": list(dict.fromkeys(word for group in check.keyword_groups
+                                                       for word in DietaryKeywords.GROUPS[group])),
+                 "word_exceptions": list(dict.fromkeys(word for group in check.keyword_groups
+                                                        for word in DietaryKeywords.EXCEPTIONS.get(group, ())))}
+                for check in profile.dietary_checks]
+
+    @staticmethod
+    def _dietary_facts(report: DietaryReport) -> list[dict]:
+        return [{"key": result.key, "name": result.label, "status": result.status.value,
+                 "matched_words": list(result.matched_words)} for result in report.results]
+
+    @staticmethod
+    def _check_dietary_wording(texts: list[str]) -> None:
+        if any(re.search(r"\b(?:safe|suitable|certified)\b|\bfree[\s-]+from\b", text, re.I)
+               for text in texts):
+            raise ValueError("Do not describe products as safe, suitable, certified or free from anything")

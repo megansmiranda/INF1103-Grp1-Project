@@ -1,9 +1,10 @@
 from ..domain.ai_analysis import AIAnalysis
+from ..domain.dietary_report import DietaryReport
 from ..domain.product import Product
 from ..domain.profile import Profile
 from .ai_request import AIRequest
 from .ai_task import AITask
-from .prompt_text import SHARED_RULES, SINGAPORE_PRODUCT_RULES, PRODUCT_SUGGESTION_SCHEMA
+from .prompt_text import SHARED_RULES, DIETARY_RULES, SINGAPORE_PRODUCT_RULES, PRODUCT_SUGGESTION_SCHEMA
 
 
 class LabelAnalysisTask(AITask):
@@ -17,7 +18,7 @@ class LabelAnalysisTask(AITask):
 You interpret one packaged-food label for a user who may have SEVERAL goals.
 
 Rules:
-""" + SHARED_RULES + """
+""" + SHARED_RULES + DIETARY_RULES + """
 - Use ONLY the label data supplied. Do not invent ingredients or amounts.
 - A null nutrition value means "not on the label" (it is NOT zero). Nutrients that are
   null are unknown.
@@ -52,10 +53,11 @@ Return exactly these 8 keys:
   "suggested_products": """ + PRODUCT_SUGGESTION_SCHEMA + """
 }"""
 
-    def __init__(self, product: Product, profile: Profile):
+    def __init__(self, product: Product, profile: Profile, dietary_report: DietaryReport | None = None):
         super().__init__()
         self._product = product
         self._profile = profile
+        self._dietary_report = dietary_report or DietaryReport()
 
     @property
     def name(self) -> str:
@@ -66,6 +68,8 @@ Return exactly these 8 keys:
         product.pop("product_id")
         payload = {"goals": self._goal_phrase(self._profile),
                    "avoid_ingredients": list(self._profile.avoid_ingredients),
+                   "dietary_checks": self._dietary_preferences(self._profile),
+                   "dietary_results": self._dietary_facts(self._dietary_report),
                    "product": product}
         return AIRequest(self.RULES, self._as_data(payload))
 
@@ -82,6 +86,7 @@ Return exactly these 8 keys:
         if len(suggestions) > 3:
             raise ValueError("suggestions must have at most 3 tips")
         products = check.product_suggestions(data, "suggested_products")
+        self._check_dietary_wording([explanation, *suggestions, *(p.reason for p in products)])
         if any(p.name.casefold() == self._product.name.casefold() for p in products):
             raise ValueError("suggested_products must not include the analysed product")
         # NO_CLAIM if and only if no claim was supplied

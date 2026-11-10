@@ -4,7 +4,7 @@ from ..domain.profile import Profile
 from .ai_request import AIRequest
 from .recommendation_advice import RecommendationAdvice
 from .ai_task import AITask
-from .prompt_text import SHARED_RULES, SINGAPORE_PRODUCT_RULES, PRODUCT_SUGGESTION_SCHEMA
+from .prompt_text import SHARED_RULES, DIETARY_RULES, SINGAPORE_PRODUCT_RULES, PRODUCT_SUGGESTION_SCHEMA
 
 
 class RecommendationTask(AITask):
@@ -14,10 +14,11 @@ class RecommendationTask(AITask):
     RULES = """You help a user in Singapore choose packaged foods.
 
 Rules:
-""" + SHARED_RULES + """
+""" + SHARED_RULES + DIETARY_RULES + """
 - picks may ONLY use products from the candidates list, by their product_id.
-- Candidates are already ranked by the app's own scoring and contain none of the
-  avoid_ingredients. Pick the ones that suit the focus best (usually the top ones).
+- Candidates are already filtered and ranked by Python. They have no matched avoid-list
+  ingredients or possible dietary concerns. Some have unknown ingredients: do not
+  claim these passed dietary checks. Pick the ones that match the focus best.
 - For each pick give one short reason (max 25 words) based on the supplied numbers.
 - tips: 1 to 3 short general tips for the user's goals and the chosen focus options.
 - If candidates is empty, return an empty picks list.
@@ -54,9 +55,11 @@ Return exactly these keys:
                 "per_serving": {n.key: v for n, v in product.nutrition.supplied().items()},
                 "ingredients": product.ingredient_text,
                 "app_score": scored.score,
+                "dietary_results": self._dietary_facts(scored.dietary_report),
             })
         payload = {"goals": self._goal_phrase(self._profile),
                    "avoid_ingredients": list(self._profile.avoid_ingredients),
+                   "dietary_checks": self._dietary_preferences(self._profile),
                    "focus": [focus.label for focus in self._options.focuses],
                    "categories": list(self._options.categories) or ["Any"],
                    "candidates": candidates}
@@ -86,4 +89,5 @@ Return exactly these keys:
             reasons[product_id] = check.text(pick, "reason")
         if allowed and not reasons:
             raise ValueError("pick at least one candidate")
+        self._check_dietary_wording([*tips, *reasons.values(), *(p.reason for p in products)])
         return RecommendationAdvice(reasons, tips, products)
