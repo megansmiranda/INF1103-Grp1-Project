@@ -12,7 +12,7 @@ from nutrilenz.ai.providers import GeminiProvider, GroqProvider    # noqa: E402
 from nutrilenz.domain.analysis import AIAnalysis                   # noqa: E402
 from nutrilenz.domain.product import Product                       # noqa: E402
 from nutrilenz.domain.user import Profile                          # noqa: E402
-from nutrilenz.errors import AIError                               # noqa: E402
+from nutrilenz.errors.ai_error import AIError                      # noqa: E402
 
 
 class FakeHttp:

@@ -2,11 +2,11 @@ import logging
 import time
 from typing import Callable
 
-from ..config import AppConfig
+from ..app_config import AppConfig
 from ..domain.product import Product
 from ..domain.recommendation import RecommendationOptions, ScoredProduct
 from ..domain.user import Profile
-from ..errors import AIError
+from ..errors.ai_error import AIError
 from .providers import AIProvider, GeminiProvider, GroqProvider, HttpClient
 from .results import AIResult, LabelImage, LabelReading, RecommendationAdvice
 from .tasks import AITask, LabelAnalysisTask, LabelExtractionTask, RecommendationTask

@@ -5,7 +5,7 @@ import urllib.error
 import urllib.request
 from abc import ABC, abstractmethod
 
-from ..errors import AIError
+from ..errors.ai_error import AIError
 from .results import AIRequest
 
 logger = logging.getLogger("nutrilenz.ai")
