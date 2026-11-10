@@ -1,15 +1,16 @@
-# Continuous integration for NutriLenz.
-# On every push and pull request, GitHub builds the Docker image and runs the tests
-# INSIDE the container. No API key is needed: tests use fake AI replies.
-# Part 2 is object-oriented, so the Part 1 "no class definitions" check is removed.
-name: CI
+# CI/CD for NutriLenz.
+# CI (every push and pull request): run all tests inside the Docker image, run the data
+# tests against a real MySQL server, and start the full app + MySQL stack as a smoke test.
+# CD (push to main only, after CI passes): publish the Docker image to GitHub Container Registry.
+# No API key is needed: tests use fake AI replies.
+name: CI-CD
 
 on:
   push:
   pull_request:
 
 jobs:
-  docker-build-and-test:
+  tests-in-docker:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the code
@@ -18,11 +19,98 @@ jobs:
       - name: Build the Docker image
         run: docker build -t nutrilenz .
 
-      - name: Part 2 tests (pytest, fake AI replies, no API)
-        run: docker run --rm nutrilenz python -m pytest tests -q -p no:cacheprovider
+      - name: Run all tests inside the container (no API, in-memory data)
+        run: docker run --rm nutrilenz python -m pytest -q -p no:cacheprovider
 
-      - name: Part 1 test scripts (kept until the old modules are replaced)
+  mysql-integration:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: nutrilenz_test
+          MYSQL_USER: nutrilenz
+          MYSQL_PASSWORD: ci-password
+          MYSQL_ROOT_PASSWORD: ci-root-password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -u root -pci-root-password"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run the data contract tests against MySQL and in-memory stores
+        env:
+          NUTRILENZ_TEST_MYSQL: "1"
+          DB_HOST: 127.0.0.1
+          DB_PORT: "3306"
+          DB_USER: nutrilenz
+          DB_PASSWORD: ci-password
+          TEST_DB_NAME: nutrilenz_test
+        run: python -m pytest tests/test_data.py -v -p no:cacheprovider
+
+  compose-smoke-test:
+    runs-on: ubuntu-latest
+    needs: tests-in-docker
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Start the app and MySQL with docker compose
+        run: docker compose up -d --build
+
+      - name: Wait for the website and check the login page loads
         run: |
-          for script in test_logic.py test_data.py test_ai_manager.py; do
-            if [ -f "$script" ]; then docker run --rm nutrilenz python "$script"; fi
+          for i in $(seq 1 30); do
+            if curl -fs http://localhost:5000/login > /dev/null; then
+              echo "NutriLenz is up"; exit 0
+            fi
+            sleep 2
           done
+          docker compose logs app
+          exit 1
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose down -v
+
+  publish-image:
+    # Continuous deployment: only for main, and only when every CI job passed
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [tests-in-docker, mysql-integration, compose-smoke-test]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Work out the image name (registry names must be lowercase)
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push the image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}
