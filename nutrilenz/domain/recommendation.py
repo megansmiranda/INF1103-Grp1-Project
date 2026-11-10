@@ -8,13 +8,24 @@ class Recommendation:
     It only holds references to products that already exist in the catalogue,
     so removing the shortlist never removes a product (aggregation)."""
 
-    def __init__(self, user_id: int, options: RecommendationOptions | None = None):
+    def __init__(self, user_id: int, options: RecommendationOptions | None = None,
+                 excluded: list[ScoredProduct] | None = None, dietary_labels: tuple[str, ...] = ()):
         self._user_id = user_id
         self._options = options or RecommendationOptions()
         self._items: list[ScoredProduct] = []
         self._reasons: dict[int, str] = {}
         self._tips: list[str] = []
         self._suggested_products: list[ProductSuggestion] = []
+        self._excluded = tuple(excluded or [])
+        self._dietary_labels = tuple(dietary_labels)
+
+    @property
+    def excluded(self) -> tuple[ScoredProduct, ...]:
+        return self._excluded
+
+    @property
+    def dietary_labels(self) -> tuple[str, ...]:
+        return self._dietary_labels
 
     @property
     def user_id(self) -> int:

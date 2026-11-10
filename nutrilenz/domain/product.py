@@ -10,8 +10,8 @@ class Product:
                  marketing_claim: str | None = None, product_id: int | None = None):
         if not isinstance(name, str) or not name.strip():
             raise ValueError("Product name is required")
-        if not isinstance(ingredient_text, str) or not ingredient_text.strip():
-            raise ValueError("Ingredient list is required")
+        if not isinstance(ingredient_text, str):
+            raise ValueError("Ingredient list must be text (blank if not on the label)")
         self._name = name.strip()
         self._nutrition = nutrition
         self._ingredient_text = ingredient_text.strip()

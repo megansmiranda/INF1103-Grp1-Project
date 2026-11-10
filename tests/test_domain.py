@@ -61,11 +61,12 @@ class TestProductAndProfile:
         with pytest.raises(ValueError):
             NutritionFacts({Nutrient.SUGAR: -1})
 
-    def test_product_requires_name_and_ingredients(self):
+    def test_product_requires_name_and_allows_missing_ingredients(self):
         with pytest.raises(ValueError):
             product(product_name=" ")
+        assert product(ingredient_text="").ingredient_text == ""
         with pytest.raises(ValueError):
-            product(ingredient_text="")
+            product(ingredient_text=123)
 
     def test_blank_claim_means_no_claim(self):
         assert not product(marketing_claim="   ").has_claim

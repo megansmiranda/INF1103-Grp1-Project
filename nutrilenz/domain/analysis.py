@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from .dietary_report import DietaryReport
 from .product import Product
 from .flag import Flag
 from .ai_analysis import AIAnalysis
@@ -14,13 +15,14 @@ class Analysis:
     def __init__(self, user_id: int, product: Product, profile_snapshot: dict,
                  ai_analysis: AIAnalysis, flags: list[Flag], goal_results: list[GoalResult],
                  score: float, provider: str, analysed_at: datetime | None = None,
-                 analysis_id: int | None = None):
+                 analysis_id: int | None = None, dietary_report: DietaryReport | None = None):
         self._user_id = user_id
         self._product = product
         self._profile_snapshot = dict(profile_snapshot)
         self._ai_analysis = ai_analysis
         self._flags = tuple(flags)
         self._goal_results = tuple(goal_results)
+        self._dietary_report = dietary_report or DietaryReport()
         self._score = round(float(score), 1)
         self._provider = provider
         self._analysed_at = analysed_at or datetime.now().replace(microsecond=0)
@@ -58,6 +60,10 @@ class Analysis:
     @property
     def goal_results(self) -> tuple[GoalResult, ...]:
         return self._goal_results
+
+    @property
+    def dietary_report(self) -> DietaryReport:
+        return self._dietary_report
 
     @property
     def score(self) -> float:
