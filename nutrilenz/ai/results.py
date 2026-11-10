@@ -1,6 +1,6 @@
 import base64
 
-from ..domain.analysis import ProductSuggestion
+from ..domain.product_suggestion import ProductSuggestion
 
 
 class LabelImage:

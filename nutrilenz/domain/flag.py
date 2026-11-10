@@ -1,0 +1,8 @@
+from enum import Enum
+
+
+class Flag(Enum):
+    GOAL_MISMATCH = "GOAL_MISMATCH"
+    CLAIM_REVIEW = "CLAIM_REVIEW"
+    MANUAL_REVIEW = "MANUAL_REVIEW"
+    GOOD_MATCH = "GOOD_MATCH"

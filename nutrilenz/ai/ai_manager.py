@@ -4,8 +4,9 @@ from typing import Callable
 
 from ..app_config import AppConfig
 from ..domain.product import Product
-from ..domain.recommendation import RecommendationOptions, ScoredProduct
-from ..domain.user import Profile
+from ..domain.recommendation_options import RecommendationOptions
+from ..domain.scored_product import ScoredProduct
+from ..domain.profile import Profile
 from ..errors.ai_error import AIError
 from .providers import AIProvider, GeminiProvider, GroqProvider, HttpClient
 from .results import AIResult, LabelImage, LabelReading, RecommendationAdvice

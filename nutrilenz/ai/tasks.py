@@ -1,11 +1,12 @@
 import json
 from abc import ABC, abstractmethod
 
-from ..domain.analysis import AIAnalysis
+from ..domain.ai_analysis import AIAnalysis
 from ..domain.nutrients import Nutrient
 from ..domain.product import Product
-from ..domain.recommendation import RecommendationOptions, ScoredProduct
-from ..domain.user import Profile
+from ..domain.recommendation_options import RecommendationOptions
+from ..domain.scored_product import ScoredProduct
+from ..domain.profile import Profile
 from .results import AIRequest, LabelImage, LabelReading, RecommendationAdvice
 from .validation import SchemaChecker
 

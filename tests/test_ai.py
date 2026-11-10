@@ -10,7 +10,8 @@ from nutrilenz.ai.results import AIRequest, LabelImage
 from nutrilenz.ai.tasks import LabelAnalysisTask, LabelExtractionTask, RecommendationTask
 from nutrilenz.ai.validation import JsonReplyParser
 from nutrilenz.domain.nutrients import Nutrient
-from nutrilenz.domain.recommendation import RecommendationOptions, ScoredProduct
+from nutrilenz.domain.recommendation_options import RecommendationOptions
+from nutrilenz.domain.scored_product import ScoredProduct
 from nutrilenz.errors.ai_error import AIError
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 100

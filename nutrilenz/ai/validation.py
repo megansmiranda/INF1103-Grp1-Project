@@ -1,7 +1,7 @@
 import json
 
-from ..domain.analysis import ProductSuggestion
-from ..domain.product import Amount
+from ..domain.product_suggestion import ProductSuggestion
+from ..domain.amount import Amount
 
 
 class JsonReplyParser:

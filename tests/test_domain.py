@@ -2,9 +2,13 @@
 import pytest
 
 from conftest import CALORIES_MAX_200, PROTEIN_MIN_15, SUGAR_MAX_10, product, profile
-from nutrilenz.domain.goals import Goal, GoalFactory, LimitGoal, MinimumGoal, TargetStatus
+from nutrilenz.domain.goal import Goal
+from nutrilenz.domain.goal_factory import GoalFactory
+from nutrilenz.domain.limit_goal import LimitGoal
+from nutrilenz.domain.minimum_goal import MinimumGoal
+from nutrilenz.domain.target_status import TargetStatus
 from nutrilenz.domain.nutrients import Nutrient
-from nutrilenz.domain.product import NutritionFacts
+from nutrilenz.domain.nutrition_facts import NutritionFacts
 
 
 class TestGoals:
