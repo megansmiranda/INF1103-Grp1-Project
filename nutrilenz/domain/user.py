@@ -6,12 +6,13 @@ class User:
     only checked through a PasswordHasher, never returned."""
 
     def __init__(self, username: str, password_hash: str, goal_specs: list[dict],
-                 avoid_ingredients: list[str] | None = None, user_id: int | None = None):
+                 avoid_ingredients: list[str] | None = None, user_id: int | None = None,
+                 dietary_checks: list[str] | None = None):
         if not isinstance(username, str) or not username.strip():
             raise ValueError("Username is required")
         self._username = username.strip()
         self.__password_hash = password_hash
-        self._profile = Profile(goal_specs, avoid_ingredients)
+        self._profile = Profile(goal_specs, avoid_ingredients, dietary_checks)
         self._user_id = user_id
 
     @property

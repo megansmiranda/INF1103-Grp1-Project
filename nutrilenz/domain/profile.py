@@ -1,5 +1,7 @@
 from .goal import Goal
 from .goal_factory import GoalFactory
+from .dietary_check import DietaryCheck
+from .dietary_check_factory import DietaryCheckFactory
 
 
 class Profile:
@@ -9,11 +11,20 @@ class Profile:
 
     MAX_GOALS = 5
 
-    def __init__(self, goal_specs: list[dict], avoid_ingredients: list[str] | None = None):
+    def __init__(self, goal_specs: list[dict], avoid_ingredients: list[str] | None = None,
+                 dietary_checks: list[str] | None = None):
         self._goals: list[Goal] = []
         self._avoid: list[str] = []
         self.replace_goals(goal_specs)
         self.replace_avoid_list(avoid_ingredients or [])
+        self.replace_dietary_checks(dietary_checks or [])
+
+    @property
+    def dietary_checks(self) -> tuple[DietaryCheck, ...]:
+        return self._dietary_checks
+
+    def replace_dietary_checks(self, keys: list[str]) -> None:
+        self._dietary_checks = DietaryCheckFactory.from_keys(keys)
 
     @property
     def goals(self) -> tuple[Goal, ...]:
@@ -48,8 +59,9 @@ class Profile:
     def snapshot(self) -> dict:
         """Plain copy saved with each analysis, so old results keep their old targets."""
         return {"goals": [goal.to_dict() for goal in self._goals],
-                "avoid_ingredients": list(self._avoid)}
+                "avoid_ingredients": list(self._avoid),
+                "dietary_checks": [check.key for check in self._dietary_checks]}
 
     @classmethod
     def from_snapshot(cls, data: dict) -> "Profile":
-        return cls(data["goals"], data.get("avoid_ingredients", []))
+        return cls(data["goals"], data.get("avoid_ingredients", []), data.get("dietary_checks") or [])
