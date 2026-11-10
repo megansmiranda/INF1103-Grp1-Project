@@ -5,10 +5,15 @@ import pytest
 from conftest import (FakeHttp, PROTEIN_MIN_15, SUGAR_MAX_10, Replies, analysis_answer, make_ai,
                       product, profile)
 from nutrilenz.ai.ai_manager import AIManager
-from nutrilenz.ai.providers import AIProvider, GeminiProvider, GroqProvider
-from nutrilenz.ai.results import AIRequest, LabelImage
-from nutrilenz.ai.tasks import LabelAnalysisTask, LabelExtractionTask, RecommendationTask
-from nutrilenz.ai.validation import JsonReplyParser
+from nutrilenz.ai.ai_provider import AIProvider
+from nutrilenz.ai.gemini_provider import GeminiProvider
+from nutrilenz.ai.groq_provider import GroqProvider
+from nutrilenz.ai.ai_request import AIRequest
+from nutrilenz.ai.label_image import LabelImage
+from nutrilenz.ai.label_analysis_task import LabelAnalysisTask
+from nutrilenz.ai.label_extraction_task import LabelExtractionTask
+from nutrilenz.ai.recommendation_task import RecommendationTask
+from nutrilenz.ai.json_reply_parser import JsonReplyParser
 from nutrilenz.domain.nutrients import Nutrient
 from nutrilenz.domain.recommendation_options import RecommendationOptions
 from nutrilenz.domain.scored_product import ScoredProduct

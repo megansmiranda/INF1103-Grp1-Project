@@ -8,7 +8,8 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from nutrilenz.ai.ai_manager import AIManager                     # noqa: E402
-from nutrilenz.ai.providers import GeminiProvider, GroqProvider    # noqa: E402
+from nutrilenz.ai.gemini_provider import GeminiProvider            # noqa: E402
+from nutrilenz.ai.groq_provider import GroqProvider                # noqa: E402
 from nutrilenz.domain.ai_analysis import AIAnalysis                # noqa: E402
 from nutrilenz.domain.product import Product                       # noqa: E402
 from nutrilenz.domain.profile import Profile                       # noqa: E402

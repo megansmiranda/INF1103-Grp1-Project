@@ -8,10 +8,19 @@ from ..domain.recommendation_options import RecommendationOptions
 from ..domain.scored_product import ScoredProduct
 from ..domain.profile import Profile
 from ..errors.ai_error import AIError
-from .providers import AIProvider, GeminiProvider, GroqProvider, HttpClient
-from .results import AIResult, LabelImage, LabelReading, RecommendationAdvice
-from .tasks import AITask, LabelAnalysisTask, LabelExtractionTask, RecommendationTask
-from .validation import JsonReplyParser
+from .ai_provider import AIProvider
+from .gemini_provider import GeminiProvider
+from .groq_provider import GroqProvider
+from .http_client import HttpClient
+from .ai_result import AIResult
+from .label_image import LabelImage
+from .label_reading import LabelReading
+from .recommendation_advice import RecommendationAdvice
+from .ai_task import AITask
+from .label_analysis_task import LabelAnalysisTask
+from .label_extraction_task import LabelExtractionTask
+from .recommendation_task import RecommendationTask
+from .json_reply_parser import JsonReplyParser
 
 logger = logging.getLogger("nutrilenz.ai")
 
