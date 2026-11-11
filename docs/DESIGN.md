@@ -58,6 +58,39 @@ classDiagram
     Analysis --> Product : refers to
     Analysis --> User : user_id
 
+    %% ---------- Dietary restrictions ----------
+    class DietaryCheck {
+        <<abstract>>
+        +group: str
+        +key()* str
+        +label()* str
+        +keyword_groups()* tuple
+    }
+    class VegetarianCheck
+    class NoDairyVegetarianCheck
+    class VeganCheck
+    class HalalFriendlyCheck
+    class AllergenCheck { -_allergen: str }
+    DietaryCheck <|-- VegetarianCheck
+    VegetarianCheck <|-- NoDairyVegetarianCheck
+    VegetarianCheck <|-- VeganCheck
+    DietaryCheck <|-- HalalFriendlyCheck
+    DietaryCheck <|-- AllergenCheck
+    class DietaryCheckFactory { +create(key) +from_keys(keys) +options() }
+    DietaryCheckFactory ..> DietaryCheck : creates
+    Profile *-- "0..*" DietaryCheck
+    class DietaryKeywords { GROUPS EXCEPTIONS }
+    DietaryCheck ..> DietaryKeywords : keyword groups
+    class DietaryStatus {
+        <<enumeration>>
+        POSSIBLE_CONCERN NO_MATCH NOT_CHECKED
+    }
+    class DietaryResult { key label status matched_words matched_spans }
+    class DietaryReport { ingredient_text +has_concern() +concern_count() +to_dict() }
+    DietaryReport *-- "0..*" DietaryResult
+    DietaryResult --> DietaryStatus
+    Analysis *-- DietaryReport
+
     class ScoredProduct { score goal_results }
     class Recommendation { +add() +reason_for() +tips +suggested_products }
     Recommendation o-- "0..*" ScoredProduct
@@ -105,12 +138,19 @@ classDiagram
     class ClaimReviewRule
     class ManualReviewRule
     class GoodMatchRule
+    class DietaryReviewRule
     Rule <|-- GoalMismatchRule
     Rule <|-- ClaimReviewRule
     Rule <|-- ManualReviewRule
+    Rule <|-- DietaryReviewRule
     Rule <|-- GoodMatchRule
-    class LogicManager { +evaluate() Evaluation +score() +rank() +check_unusual_numbers() }
+    class LogicManager { +evaluate() Evaluation +check_dietary() DietaryReport +score() +rank() +check_unusual_numbers() }
     LogicManager *-- "1..*" Rule
+    class DietaryChecker { +check(text, check) DietaryResult +evaluate(text, checks) DietaryReport }
+    LogicManager *-- DietaryChecker
+    DietaryChecker ..> DietaryCheck : uses
+    DietaryChecker ..> DietaryReport : creates
+    LabelAnalysisTask --> DietaryReport : sent to AI as facts
 
     %% ---------- Data Manager ----------
     class UserRepository { <<interface>> }
@@ -164,6 +204,8 @@ classDiagram
     class WebIOManager { +run() }
     WebIOManager *-- "4" PageController
     WebIOManager *-- CsrfGuard
+    class DietaryPresenter { +ingredient_segments(report) }
+    DietaryPresenter ..> DietaryReport : shows
     PageController --> WebContext
     WebContext *-- FormParser
     WebContext --> AnalysisService
