@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% from "_recommendation_dietary.html" import dietary_summary %}
+{% block title %}Recommendations{% endblock %}
+{% set focus_icons = {'BEST_MATCH': '🎯', 'LOWEST_SUGAR': '🍬', 'LOWEST_CALORIES': '🔥', 'LOWEST_SODIUM': '🧂',
+                      'LOWEST_FAT': '🥑', 'HIGHEST_PROTEIN': '💪', 'HIGHEST_FIBRE': '🌾'} %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Recommendations</h1>
+    <p>Tick what matters to you. NutriLenz ranks saved products against your goals (skipping anything you avoid),
+       then the AI explains the best picks and suggests products to try in Singapore.</p></div>
+</div>
+<form method="post" class="card">
+  {{ dietary_summary(current_user.profile.dietary_checks|map(attribute='label')|list) }}
+  {{ m.csrf() }}
+  <fieldset style="margin-top:0">
+    <legend>What should we focus on? <span class="hint">· pick one or more</span></legend>
+    <div class="choices">
+      {% for f in focuses %}
+        <label class="choice">
+          <input type="checkbox" name="focus" value="{{ f.name }}" {% if f.name in selected_focuses %}checked{% endif %}>
+          <span class="choice-icon">{{ focus_icons.get(f.name, '⭐') }}</span> {{ f.label }} <span class="tick">✓</span>
+        </label>
+      {% endfor %}
+    </div>
+    {{ m.err(errors, 'focus') }}
+  </fieldset>
+  <fieldset>
+    <legend>Which categories? <span class="hint">· none ticked means any category</span></legend>
+    <div class="chips">
+      {% for c in categories %}
+        <label class="chip"><input type="checkbox" name="category" value="{{ c }}" {% if c in selected_categories %}checked{% endif %}>{{ c }}</label>
+      {% else %}
+        <span class="hint">No categories yet — analyse a few products first.</span>
+      {% endfor %}
+    </div>
+    {{ m.err(errors, 'category') }}
+  </fieldset>
+  <button>✨ Get recommendations</button>
+</form>
+{% endblock %}

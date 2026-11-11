@@ -1,0 +1,19 @@
+{% macro dietary_summary(labels) %}
+  <p class="hint">{% if labels %}Using your dietary checks: {{ labels|join(', ') }}{% else %}No dietary checks set{% endif %} · <a href="{{ url_for('profile') }}">Change</a></p>
+{% endmacro %}
+
+{% macro dietary_exclusions(items) %}
+{% if items %}
+  <details class="card dietary-exclusions" style="margin-top:16px">
+    <summary>Left out because of possible dietary concerns ({{ items|length }})</summary>
+    {% for item in items %}
+      <section>
+        <h3>{{ item.product.display_name() }}</h3>
+        <ul>{% for result in item.dietary_report.results if result.status.value == 'POSSIBLE_CONCERN' %}
+          <li>{{ result.label }}: Possible concern — {% for word in result.matched_words %}<mark>{{ word }}</mark>{{ ', ' if not loop.last }}{% endfor %}</li>
+        {% endfor %}</ul>
+      </section>
+    {% endfor %}
+  </details>
+{% endif %}
+{% endmacro %}
