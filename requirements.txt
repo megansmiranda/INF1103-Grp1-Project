@@ -1,3 +1,2 @@
-# NutriLenz uses only the Python standard library (json, urllib, pathlib, logging).
-# No third-party packages are required. The Dockerfile installs from this file,
-# so it must exist; add packages here if the team ever needs any.
+pytest==9.2.0
+PyMySQL==1.2.3

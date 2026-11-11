@@ -1,12 +1,15 @@
 # Secrets
 .env
 
-# Generated data and logs (each person has their own)
-data/
+# Generated data and logs (each person has their own). Leading / = only the top-level
+# folder, so the nutrilenz/data package is NOT ignored.
+/data/
+*.log
 
 # Python / editor junk
 __pycache__/
 *.pyc
+.pytest_cache/
 .venv/
 .vscode/
 
