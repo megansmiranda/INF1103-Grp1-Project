@@ -1,0 +1,39 @@
+# Runs the web app and its MySQL database together.
+#   docker compose up --build        -> open http://localhost:5000
+#   docker compose run --rm app python -m pytest   -> run the tests in the container
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: nutrilenz
+      MYSQL_USER: nutrilenz
+      MYSQL_PASSWORD: ${DB_PASSWORD:-nutrilenz-dev-password}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-nutrilenz-root-dev-password}
+    volumes:
+      - nutrilenz-mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "--protocol=TCP", "-h", "127.0.0.1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NUTRILENZ_STORAGE: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: nutrilenz
+      DB_PASSWORD: ${DB_PASSWORD:-nutrilenz-dev-password}
+      DB_NAME: nutrilenz
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  nutrilenz-mysql:

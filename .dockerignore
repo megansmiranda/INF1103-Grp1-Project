@@ -1,8 +1,13 @@
 .git
+.github
 .env
 data
+logs
+*.log
+sample_records
 __pycache__
 *.pyc
+.pytest_cache
 .venv
 .vscode
 *.tar
