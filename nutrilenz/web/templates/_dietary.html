@@ -1,0 +1,34 @@
+{% macro dietary_card(record) %}
+{% set report = record.dietary_report %}
+  <section class="card match-card dietary-results" aria-label="Dietary checks">
+    <div class="card-title"><span class="icon-bubble orange" aria-hidden="true">🥗</span>
+      <div><h2>Dietary checks</h2>
+        <p class="hint match-summary">{% if report.results %}{{ report.concern_count }} possible concern{{ 's' if report.concern_count != 1 }} – check the label{% elif report.rules_version == 'not-run' %}No saved dietary checks{% else %}No checks selected{% endif %}</p>
+      </div>
+    </div>
+    {% if report.results %}
+    <div class="goal-results dietary-rows">
+      {% for result in report.results %}
+      <div class="goal-result dietary-result">
+        <span class="gr-icon" aria-hidden="true">{{ '⚠️' if result.status.value == 'POSSIBLE_CONCERN' else '🔎' }}</span>
+        <div class="gr-text">{{ result.label }}
+          <p class="hint dietary-detail">{% if result.matched_words %}Found {% for word in result.matched_words %}<b>{{ word }}</b>{{ ', ' if not loop.last else '.' }}{% endfor %}{% elif result.status.value == 'NO_MATCH' %}No match found{% else %}Not checked – no ingredient list{% endif %}</p>
+          {% if result.key == 'halal_friendly' %}<p class="hint halal-note">This is not a halal certification. Look for a certification logo on the pack.</p>{% endif %}
+        </div>
+        <span class="status dietary-status {{ result.status.value|lower }}" title="{{ result.status.label }}">{{ {'POSSIBLE_CONCERN': 'CONCERN', 'NO_MATCH': 'NO MATCH', 'NOT_CHECKED': 'NOT CHECKED'}[result.status.value] }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+      <p class="muted">{% if report.rules_version == 'not-run' %}Dietary checks weren't run for this analysis{% else %}No dietary checks selected for this analysis{% endif %}</p>
+    {% endif %}
+    <p class="hint match-footer">Concerns are found by NutriLenz's rules; the AI only explains them. Keyword checks can miss 'may contain' warnings – always read the packaging.</p>
+  </section>
+{% endmacro %}
+
+{% macro confirmed_ingredients(record) %}
+  <section class="card confirmed-ingredients" aria-label="Ingredients you confirmed">
+    <div class="card-title"><span class="icon-bubble blue" aria-hidden="true">🏷️</span><h2>Ingredients you confirmed</h2></div>
+    <div class="dietary-ingredients"><p>{% if record.dietary_report.ingredient_text %}{% for text, matched in dietary_view.ingredient_segments(record.dietary_report) %}{% if matched %}<mark>{{ text }}</mark>{% else %}{{ text }}{% endif %}{% endfor %}{% else %}{{ record.product.ingredient_text or 'No ingredient list' }}{% endif %}</p></div>
+  </section>
+{% endmacro %}

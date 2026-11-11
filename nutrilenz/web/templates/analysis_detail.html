@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% block title %}{{ record.product.name }}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('history') }}">← Back to history</a></p>
+{{ m.analysis_result(record) }}
+<div class="card" style="margin-top:16px">
+  <div class="card-title"><span class="icon-bubble blue">🏷️</span><h2>Label details</h2></div>
+  <div class="split">
+    <div>
+      <p><b>Ingredients</b><br>{{ record.product.ingredient_text }}</p>
+      <p><b>Claim</b><br>{{ record.product.marketing_claim or 'None' }}</p>
+    </div>
+    <table>
+      <thead><tr><th>Nutrient</th><th>Per serving</th></tr></thead>
+      <tbody>
+      {% for n in nutrients %}
+        {% set v = record.product.nutrition.get(n) %}
+        <tr><td>{{ n.label }}</td><td>{{ '—' if v is none else ('%g'|format(v) ~ ' ' ~ n.unit) }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<form method="post" action="{{ url_for('delete_analysis', analysis_id=record.analysis_id) }}" data-confirm="Delete this analysis?" style="margin-top:16px">
+  {{ m.csrf() }}<button class="ghost">🗑️ Delete this analysis</button>
+</form>
+{% endblock %}

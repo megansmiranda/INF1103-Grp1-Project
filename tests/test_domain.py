@@ -9,6 +9,8 @@ from nutrilenz.domain.minimum_goal import MinimumGoal
 from nutrilenz.domain.target_status import TargetStatus
 from nutrilenz.domain.nutrients import Nutrient
 from nutrilenz.domain.nutrition_facts import NutritionFacts
+from nutrilenz.domain.user import User
+from nutrilenz.data.passwords import PasswordHasher
 
 
 class TestGoals:
@@ -101,3 +103,19 @@ class TestProductAndProfile:
     def test_avoid_list_is_cleaned(self):
         p = profile(avoid=[" Peanuts ", "peanuts", "", "MSG"])
         assert p.avoid_ingredients == ("Peanuts", "MSG")
+
+
+class TestPasswords:
+    def test_hash_is_salted_and_verifies(self):
+        hasher = PasswordHasher(iterations=1000)
+        first, second = hasher.hash("secret123"), hasher.hash("secret123")
+        assert first != second and "secret123" not in first
+        assert hasher.verify("secret123", first)
+        assert not hasher.verify("wrong", first)
+        assert not hasher.verify("secret123", "garbage")
+
+    def test_user_hides_password_hash(self):
+        hasher = PasswordHasher(iterations=1000)
+        user = User("jane", hasher.hash("secret123"), [SUGAR_MAX_10])
+        assert user.password_matches("secret123", hasher)
+        assert not hasattr(user, "password_hash")
