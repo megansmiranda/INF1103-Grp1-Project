@@ -1,0 +1,417 @@
+{
+  "products": [
+    {
+      "product_name": "Example Cereal",
+      "brand": "GoodGrain",
+      "category": "Cereal",
+      "nutrition": {
+        "sugar_g": 14,
+        "protein_g": 6,
+        "sodium_mg": 180,
+        "calories_kcal": 210,
+        "fat_g": 3,
+        "saturated_fat_g": 0.5,
+        "carbohydrate_g": 40,
+        "fibre_g": 4
+      },
+      "ingredient_text": "Oats, apple juice concentrate, brown rice syrup, cocoa, maltodextrin",
+      "marketing_claim": "Naturally sweetened - no refined sugar"
+    },
+    {
+      "product_name": "Mystery Granola",
+      "brand": null,
+      "category": "Cereal",
+      "nutrition": {
+        "sugar_g": null,
+        "protein_g": 5,
+        "sodium_mg": 90,
+        "calories_kcal": 190,
+        "fat_g": null,
+        "saturated_fat_g": null,
+        "carbohydrate_g": 30,
+        "fibre_g": 3
+      },
+      "ingredient_text": "Oats, honey, golden syrup, raisins",
+      "marketing_claim": "Low Sugar"
+    },
+    {
+      "product_name": "Unsweetened Muesli",
+      "brand": "GoodGrain",
+      "category": "Cereal",
+      "nutrition": {
+        "sugar_g": 5,
+        "protein_g": 7,
+        "sodium_mg": 10,
+        "calories_kcal": 180,
+        "fat_g": 4,
+        "saturated_fat_g": 0.7,
+        "carbohydrate_g": 28,
+        "fibre_g": 6
+      },
+      "ingredient_text": "Rolled oats, wheat flakes, almonds, sunflower seeds, dried apple",
+      "marketing_claim": "No added sugar"
+    },
+    {
+      "product_name": "PowerUp Protein Bar",
+      "brand": "PowerUp",
+      "category": "Snack",
+      "nutrition": {
+        "sugar_g": 3,
+        "protein_g": 20,
+        "sodium_mg": 150,
+        "calories_kcal": 200,
+        "fat_g": 8,
+        "saturated_fat_g": 3,
+        "carbohydrate_g": 22,
+        "fibre_g": 6
+      },
+      "ingredient_text": "Whey protein isolate, milk protein, almonds, peanuts, soluble corn fibre, cocoa butter, sucralose",
+      "marketing_claim": "High Protein"
+    },
+    {
+      "product_name": "Roasted Chickpea Snack",
+      "brand": "Crunchy Co",
+      "category": "Snack",
+      "nutrition": {
+        "sugar_g": 2,
+        "protein_g": 7,
+        "sodium_mg": 240,
+        "calories_kcal": 130,
+        "fat_g": 3,
+        "saturated_fat_g": 0.3,
+        "carbohydrate_g": 18,
+        "fibre_g": 5
+      },
+      "ingredient_text": "Chickpeas, sunflower oil, sea salt, paprika",
+      "marketing_claim": "Plant protein"
+    },
+    {
+      "product_name": "Oat Fibre Crackers",
+      "brand": "Crunchy Co",
+      "category": "Snack",
+      "nutrition": {
+        "sugar_g": 1,
+        "protein_g": 3,
+        "sodium_mg": 160,
+        "calories_kcal": 120,
+        "fat_g": 4,
+        "saturated_fat_g": 0.5,
+        "carbohydrate_g": 17,
+        "fibre_g": 4
+      },
+      "ingredient_text": "Wholegrain oat flour, oat fibre, canola oil, salt, rosemary",
+      "marketing_claim": "Source of fibre"
+    },
+    {
+      "product_name": "Instant Chicken Noodles",
+      "brand": null,
+      "category": "Instant noodles",
+      "nutrition": {
+        "sugar_g": 2,
+        "protein_g": 8,
+        "sodium_mg": 1450,
+        "calories_kcal": 380,
+        "fat_g": 14,
+        "saturated_fat_g": 7,
+        "carbohydrate_g": 52,
+        "fibre_g": 2
+      },
+      "ingredient_text": "Wheat flour, palm oil, salt, monosodium glutamate, disodium inosinate, chicken extract powder",
+      "marketing_claim": null
+    },
+    {
+      "product_name": "Plain Greek Yoghurt",
+      "brand": "Dairy Fresh",
+      "category": "Dairy",
+      "nutrition": {
+        "sugar_g": 4,
+        "protein_g": 10,
+        "sodium_mg": 45,
+        "calories_kcal": 100,
+        "fat_g": 3,
+        "saturated_fat_g": 2,
+        "carbohydrate_g": 4,
+        "fibre_g": 0
+      },
+      "ingredient_text": "Pasteurised milk, live yoghurt cultures",
+      "marketing_claim": "High in protein"
+    },
+    {
+      "product_name": "Lite Chocolate Milk",
+      "brand": "Dairy Fresh",
+      "category": "Drink",
+      "nutrition": {
+        "sugar_g": 18,
+        "protein_g": 8,
+        "sodium_mg": 120,
+        "calories_kcal": 160,
+        "fat_g": 2.5,
+        "saturated_fat_g": 1.6,
+        "carbohydrate_g": 24,
+        "fibre_g": 0
+      },
+      "ingredient_text": "Reduced fat milk, sugar, cocoa, thickener (carrageenan)",
+      "marketing_claim": "50% less fat"
+    },
+    {
+      "product_name": "Fruit Yoghurt Drink",
+      "brand": "Dairy Fresh",
+      "category": "Drink",
+      "nutrition": {
+        "sugar_g": 22,
+        "protein_g": 3,
+        "sodium_mg": 60,
+        "calories_kcal": 150,
+        "fat_g": 2,
+        "saturated_fat_g": 1.3,
+        "carbohydrate_g": 28,
+        "fibre_g": 0
+      },
+      "ingredient_text": "Milk, sugar, strawberry puree, glucose syrup, stabiliser, flavouring",
+      "marketing_claim": "Made with real fruit"
+    },
+    {
+      "product_name": "Tuna in Spring Water",
+      "brand": "Ocean Catch",
+      "category": "Canned food",
+      "nutrition": {
+        "sugar_g": 0,
+        "protein_g": 22,
+        "sodium_mg": 300,
+        "calories_kcal": 100,
+        "fat_g": 1,
+        "saturated_fat_g": 0.3,
+        "carbohydrate_g": 0,
+        "fibre_g": 0
+      },
+      "ingredient_text": "Skipjack tuna, water, salt",
+      "marketing_claim": null
+    },
+    {
+      "product_name": "Wholegrain Bread",
+      "brand": "Baker's Best",
+      "category": "Bakery",
+      "nutrition": {
+        "sugar_g": 2,
+        "protein_g": 4,
+        "sodium_mg": 180,
+        "calories_kcal": 90,
+        "fat_g": 1,
+        "saturated_fat_g": 0.2,
+        "carbohydrate_g": 16,
+        "fibre_g": 3
+      },
+      "ingredient_text": "Wholemeal wheat flour, water, yeast, wheat gluten, salt, vinegar",
+      "marketing_claim": "Wholegrain"
+    }
+  ],
+  "users": [
+    {
+      "username": "jane",
+      "password": "jane12345",
+      "goals": [
+        {
+          "nutrient": "sugar_g",
+          "direction": "MAX",
+          "target": 10
+        },
+        {
+          "nutrient": "calories_kcal",
+          "direction": "MAX",
+          "target": 200
+        }
+      ],
+      "avoid_ingredients": [
+        "maltodextrin"
+      ],
+      "analyses": [
+        {
+          "product_name": "Example Cereal",
+          "analysed_at": "2026-10-26T09:15:00",
+          "provider": "gemini",
+          "ai_analysis": {
+            "relevant_ingredients": [
+              "maltodextrin",
+              "brown rice syrup"
+            ],
+            "goal_alignment": "POOR_ALIGNMENT",
+            "claim_status": "QUESTIONABLE",
+            "evidence": [
+              "Naturally sweetened - no refined sugar",
+              "Sugar 14.0g",
+              "Calories 210.0kcal",
+              "Ingredient text: Oats, apple juice concentrate, brown rice syrup, cocoa, maltodextrin"
+            ],
+            "explanation": "This cereal contains 14g of sugar and 210 calories per serving, which works against your goals to keep calories and sugar low. It also contains maltodextrin, an easily digestible processed starch that you wanted to avoid. Furthermore, while the claim states 'no refined sugar,' the product relies heavily on brown rice syrup and apple juice concentrate, making the marketing claim questionable.",
+            "confidence": "HIGH",
+            "suggestions": [
+              "Choose unsweetened oats or plain rolled oats to avoid added syrups and maltodextrin.",
+              "Check ingredient lists for hidden sweeteners like rice syrup and fruit juice concentrates when avoiding sugar."
+            ],
+            "suggested_products": [
+              {
+                "name": "Quaker 100% Instant Oatmeal",
+                "brand": "Quaker",
+                "reason": "Contains zero added sugars, no maltodextrin, and lower calories."
+              },
+              {
+                "name": "FairPrice Australian Rolled Oats",
+                "brand": "FairPrice",
+                "reason": "Single ingredient whole grain with no added sugars or hidden sweeteners."
+              }
+            ]
+          }
+        },
+        {
+          "product_name": "Unsweetened Muesli",
+          "analysed_at": "2026-10-28T08:40:00",
+          "provider": "gemini",
+          "ai_analysis": {
+            "relevant_ingredients": [],
+            "goal_alignment": "ALIGNED",
+            "claim_status": "CONSISTENT",
+            "evidence": [
+              "Sugar is 5.0g per serving",
+              "Calories are 180.0 kcal per serving",
+              "Ingredient text: Rolled oats, wheat flakes, almonds, sunflower seeds, dried apple",
+              "Marketing claim: No added sugar"
+            ],
+            "explanation": "This unsweetened muesli aligns well with your goals to keep sugar and calories low, containing only naturally occurring sugars from fruit and oats. The ingredient list is clean and does not contain maltodextrin. Furthermore, the 'no added sugar' claim is consistent with the ingredient list and low sugar content.",
+            "confidence": "HIGH",
+            "suggestions": [
+              "Pair this muesli with unsweetened plant milk or plain Greek yogurt to keep total meal calories and sugar low.",
+              "Watch your portion sizes, as muesli is dense and can be easy to overeat."
+            ],
+            "suggested_products": [
+              {
+                "name": "Kelly's Choice Natural Rolled Oats",
+                "brand": "Kelly's Choice",
+                "reason": "Single ingredient whole grain with zero added sugar and naturally low calories."
+              },
+              {
+                "name": "FairPrice Finest Organic Rolled Oats",
+                "brand": "FairPrice",
+                "reason": "Affordable, unsweetened whole grain option carrying the Healthier Choice Symbol."
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "username": "sam",
+      "password": "sam12345",
+      "goals": [
+        {
+          "nutrient": "protein_g",
+          "direction": "MIN",
+          "target": 15
+        },
+        {
+          "nutrient": "sodium_mg",
+          "direction": "MAX",
+          "target": 400
+        }
+      ],
+      "avoid_ingredients": [
+        "peanuts"
+      ],
+      "analyses": [
+        {
+          "product_name": "Instant Chicken Noodles",
+          "analysed_at": "2026-10-25T19:05:00",
+          "provider": "gemini",
+          "ai_analysis": {
+            "relevant_ingredients": [
+              "salt",
+              "monosodium glutamate"
+            ],
+            "goal_alignment": "MIXED",
+            "claim_status": "NO_CLAIM",
+            "evidence": [
+              "protein_g: 8.0",
+              "sodium_mg: 1450.0",
+              "ingredient_text: Salt, monosodium glutamate"
+            ],
+            "explanation": "This product provides a moderate amount of protein at 8 grams, which can help support your goal to get more protein. However, it is very high in sodium at 1450 milligrams per serving, which goes against your goal to keep sodium low. Monosodium glutamate is a flavor enhancer that contributes to the high sodium content.",
+            "confidence": "HIGH",
+            "suggestions": [
+              "Look for instant noodles or noodle alternatives that carry Singapore's Healthier Choice Symbol for lower sodium options.",
+              "Use only a small fraction of the seasoning packet to significantly reduce your sodium intake."
+            ],
+            "suggested_products": [
+              {
+                "name": "Koka Silk Non-Fried Instant Noodles Chicken Flavour",
+                "brand": "Koka",
+                "reason": "Lower in sodium and carries the Healthier Choice Symbol."
+              }
+            ]
+          }
+        },
+        {
+          "product_name": "PowerUp Protein Bar",
+          "analysed_at": "2026-10-27T16:30:00",
+          "provider": "gemini",
+          "ai_analysis": {
+            "relevant_ingredients": [
+              "whey protein isolate",
+              "milk protein",
+              "peanuts"
+            ],
+            "goal_alignment": "POOR_ALIGNMENT",
+            "claim_status": "CONSISTENT",
+            "evidence": [
+              "Whey protein isolate, milk protein, almonds, peanuts, soluble corn fibre, cocoa butter, sucralose",
+              "protein_g: 20.0",
+              "sodium_mg: 150.0"
+            ],
+            "explanation": "Whey protein isolate and milk protein are refined protein sources that support your goal of getting more protein. However, this product contains peanuts, which you requested to avoid. Even though the sodium content is relatively low, the presence of peanuts means this product is not suitable for you.",
+            "confidence": "HIGH",
+            "suggestions": [
+              "Check ingredient lists carefully for peanuts or peanut butter when buying protein bars.",
+              "Look for nut-free protein bars made with whey or soy if you want to avoid peanuts."
+            ],
+            "suggested_products": [
+              {
+                "name": "Myprotein Impact Protein Bar Almond & Sea Salt",
+                "brand": "Myprotein",
+                "reason": "High in protein and uses almonds instead of peanuts."
+              }
+            ]
+          }
+        },
+        {
+          "product_name": "Tuna in Spring Water",
+          "analysed_at": "2026-10-29T12:10:00",
+          "provider": "gemini",
+          "ai_analysis": {
+            "relevant_ingredients": [
+              "Skipjack tuna",
+              "salt"
+            ],
+            "goal_alignment": "ALIGNED",
+            "claim_status": "NO_CLAIM",
+            "evidence": [
+              "protein_g: 22.0",
+              "sodium_mg: 300.0",
+              "ingredient_text: Skipjack tuna, water, salt"
+            ],
+            "explanation": "This product aligns well with your goals because it provides a high amount of protein with zero fat and no peanuts. While it contains salt, the sodium level remains relatively moderate per serving. Always check the nutrition panel for sodium if you need to strictly limit your daily intake further.",
+            "confidence": "HIGH",
+            "suggestions": [
+              "Rinse the tuna with water before eating to reduce some of the sodium content.",
+              "Pair with low-sodium whole grain crackers or a salad for a balanced meal."
+            ],
+            "suggested_products": [
+              {
+                "name": "Ayam Brand Tuna in Water Lightly Salted",
+                "brand": "Ayam Brand",
+                "reason": "Lower sodium option carrying the Healthier Choice Symbol, rich in protein and peanut-free."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

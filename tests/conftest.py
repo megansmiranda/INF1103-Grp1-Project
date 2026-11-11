@@ -10,10 +10,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from nutrilenz.ai.ai_manager import AIManager                     # noqa: E402
 from nutrilenz.ai.gemini_provider import GeminiProvider            # noqa: E402
 from nutrilenz.ai.groq_provider import GroqProvider                # noqa: E402
+from nutrilenz.data.data_manager import DataManager                # noqa: E402
+from nutrilenz.data.memory_store import InMemoryDataStore          # noqa: E402
 from nutrilenz.domain.ai_analysis import AIAnalysis                # noqa: E402
 from nutrilenz.domain.product import Product                       # noqa: E402
 from nutrilenz.domain.profile import Profile                       # noqa: E402
 from nutrilenz.errors.ai_error import AIError                      # noqa: E402
+from nutrilenz.logic.logic_manager import LogicManager             # noqa: E402
 
 
 class FakeHttp:
@@ -103,3 +106,15 @@ def ai_analysis(**changes) -> AIAnalysis:
 SUGAR_MAX_10 = {"nutrient": "sugar_g", "direction": "MAX", "target": 10}
 CALORIES_MAX_200 = {"nutrient": "calories_kcal", "direction": "MAX", "target": 200}
 PROTEIN_MIN_15 = {"nutrient": "protein_g", "direction": "MIN", "target": 15}
+
+
+@pytest.fixture
+def logic() -> LogicManager:
+    return LogicManager()
+
+
+@pytest.fixture
+def data() -> DataManager:
+    manager = DataManager(InMemoryDataStore())
+    manager.ensure_ready()
+    return manager
