@@ -5,8 +5,8 @@
 INF1103 LAB-P12 Group 1 · Repository: https://github.com/megansmiranda/INF1103-Grp1-Project
 
 NutriLenz helps young adults in Singapore understand packaged food labels. Sign up, choose
-one or more goals (e.g. *reduce sugar* **and** *low calories*), then type in a label or upload
-photos of it. The AI explains the ingredients and checks the marketing claim, the business rules
+one or more goals (e.g. *reduce sugar* **and** *low calories*) and any dietary restrictions
+(e.g. vegetarian, halal-friendly, allergens), then type in a label or upload photos of it. The AI explains the ingredients and checks the marketing claim, the business rules
 flag anything to look at, and the result is saved to your history. Recommendations rank saved
 products against your goals and the AI suggests real products to try in Singapore.
 
@@ -44,10 +44,10 @@ and the `DB_*` settings in `.env.example` to keep data.
 docker compose run --rm app python -m pytest          # inside the container
 python -m pytest                                      # or locally
 ```
-150 tests cover the domain classes, business rules, AI parsing/validation/retry/fallback (using fake
-API replies), both storage back ends, the services, background jobs, the web pages and the
-architecture rules. The 11 MySQL contract tests run when `NUTRILENZ_TEST_MYSQL=1` is set
-(CI does this with a MySQL service).
+The tests cover the domain classes, business rules, dietary checks, AI parsing/validation/retry/fallback
+(using fake API replies), both storage back ends, the services, background jobs, the web pages and
+the architecture rules. The MySQL contract tests are skipped locally and run when
+`NUTRILENZ_TEST_MYSQL=1` is set (CI does this with a MySQL service).
 
 ## 3. Features
 
@@ -55,6 +55,7 @@ architecture rules. The 11 MySQL contract tests run when `NUTRILENZ_TEST_MYSQL=1
 |---|---|
 | Sign up / log in (salted PBKDF2 password hashes), edit goals, delete account | My goals |
 | **Multiple goals** from 8 nutrients (sugar, protein, sodium, calories, fat, saturated fat, carbs, fibre) | Sign up / My goals |
+| **Dietary restrictions** (vegetarian, no-dairy vegetarian, vegan, halal-friendly, allergens) checked against the ingredients | Sign up / My goals, Analysis page |
 | Analyse a typed-in label (with "unusual number" and "already analysed" checks) | Analyse |
 | **Upload up to 5 label photos** – the AI reads them **in parallel**, you check the values, then they are analysed in parallel | Analyse |
 | Result: per-goal check, flags, 0–100 score, AI explanation, tips and **real Singapore products to try** | Analysis page |
