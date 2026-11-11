@@ -14,6 +14,7 @@ from nutrilenz.domain.ai_analysis import AIAnalysis                # noqa: E402
 from nutrilenz.domain.product import Product                       # noqa: E402
 from nutrilenz.domain.profile import Profile                       # noqa: E402
 from nutrilenz.errors.ai_error import AIError                      # noqa: E402
+from nutrilenz.logic.logic_manager import LogicManager             # noqa: E402
 
 
 class FakeHttp:
@@ -103,3 +104,8 @@ def ai_analysis(**changes) -> AIAnalysis:
 SUGAR_MAX_10 = {"nutrient": "sugar_g", "direction": "MAX", "target": 10}
 CALORIES_MAX_200 = {"nutrient": "calories_kcal", "direction": "MAX", "target": 200}
 PROTEIN_MIN_15 = {"nutrient": "protein_g", "direction": "MIN", "target": 15}
+
+
+@pytest.fixture
+def logic() -> LogicManager:
+    return LogicManager()
