@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>Hi {{ current_user.username }} 👋</h1>
+  <p>What's in your basket today? Check a label in seconds.</p>
+  <div class="hero-actions">
+    <a class="button light" href="{{ url_for('analyse') }}">📷 Analyse a product</a>
+    <a class="button light" href="{{ url_for('recommendations') }}">✨ Get recommendations</a>
+  </div>
+</section>
+
+<div class="grid four">
+  <div class="card stat"><span class="icon-bubble">📊</span><div><div class="num">{{ total }}</div><div class="label">analyses</div></div></div>
+  <div class="card stat">{% if average is not none %}{{ m.ring(average, 'sm') }}{% else %}<span class="icon-bubble">⭐</span>{% endif %}<div><div class="label">average score</div></div></div>
+  <a class="card stat hover" href="{{ url_for('history', flag='GOOD_MATCH') }}" style="text-decoration:none;color:inherit"><span class="icon-bubble">✅</span><div><div class="num">{{ counts['GOOD_MATCH'] }}</div><div class="label">good matches</div></div></a>
+  <a class="card stat hover" href="{{ url_for('history', flag='GOAL_MISMATCH') }}" style="text-decoration:none;color:inherit"><span class="icon-bubble orange">⛔</span><div><div class="num">{{ counts['GOAL_MISMATCH'] }}</div><div class="label">goal mismatches</div></div></a>
+</div>
+
+<div class="split" style="margin-top:16px">
+  <div class="card">
+    <div class="card-title"><span class="icon-bubble blue">🕒</span><h2>Recent analyses</h2>
+      <a href="{{ url_for('history') }}" style="margin-left:auto">See all →</a></div>
+    {% for r in recent %}
+      <a class="list-item" href="{{ url_for('analysis_detail', analysis_id=r.analysis_id) }}">
+        {{ m.ring(r.score, 'sm') }}
+        <div class="grow"><span class="row-link">{{ r.product.display_name() }}</span>
+          <span class="hint"> · {{ r.analysed_at.strftime('%d %b %Y') }}</span><br>
+          {{ m.flags(r.flag_names()) }}</div>
+      </a>
+    {% else %}
+      {{ m.empty('🥫', 'No analyses yet. Analyse your first product!') }}
+    {% endfor %}
+  </div>
+  <div class="stack">
+    <div class="card">
+      <div class="card-title"><span class="icon-bubble">🎯</span><h2>Your goals</h2>
+        <a href="{{ url_for('profile') }}" style="margin-left:auto">Edit</a></div>
+      <div class="goal-pills">{% for g in current_user.profile.describe_goals() %}<span class="tag">{{ g }}</span>{% endfor %}</div>
+      {% if current_user.profile.avoid_ingredients %}
+        <p class="hint" style="margin-top:12px">🚫 Avoiding: {{ current_user.profile.avoid_ingredients|join(', ') }}</p>
+      {% endif %}
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon-bubble violet">🏷️</span><h2>Flags so far</h2></div>
+      {% for name, count in counts.items() %}
+        <a class="list-item" href="{{ url_for('history', flag=name) }}">
+          <div class="grow">{{ m.flags([name]) }}</div><b>{{ count }}</b>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

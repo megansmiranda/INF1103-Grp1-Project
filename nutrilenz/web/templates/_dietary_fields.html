@@ -1,0 +1,61 @@
+{% set diet_cards = [('none', '🍽️', 'No diet', 'Just use the checks you tick below.'),
+                     ('vegetarian', '🥬', 'Vegetarian – dairy allowed', 'Flags meat, fish and animal-derived ingredients.'),
+                     ('vegetarian_no_dairy', '🌱', 'Vegetarian – no dairy', 'Also flags milk and dairy ingredients.'),
+                     ('vegan', '🌿', 'Vegan', 'Also flags eggs, honey and other animal products.')] %}
+{% set check_details = {'nuts': ('🥜', 'Peanuts and tree-nut ingredient words.'),
+                        'dairy': ('🥛', 'Milk and dairy ingredient words.'),
+                        'gluten': ('🌾', 'Wheat, barley, rye and related words.'),
+                        'egg': ('🥚', 'Eggs and egg-derived ingredient words.'),
+                        'soy': ('🫘', 'Soy and soya ingredient words.'),
+                        'shellfish': ('🦐', 'Shellfish ingredient words.')} %}
+
+{% macro dietary_fields(selected_checks, errors, values, numbered=false) %}
+  {% set choice = namespace(key='none') %}
+  {% for key, emoji, title, hint in diet_cards if key in selected_checks %}{% set choice.key = key %}{% endfor %}
+  {% if values.get('diet') %}{% set choice.key = values.get('diet') %}{% endif %}
+  <section class="dietary-settings" aria-labelledby="dietary-heading">
+    <h2 id="dietary-heading" class="form-section-title">{% if numbered %}<span class="section-number">3</span> {% endif %}Dietary checks <span class="hint">· optional</span></h2>
+    <p class="dietary-intro">Tick anything you want NutriLenz to look out for. We will warn you if the ingredient list contains a matching word.</p>
+    {% if errors.get('dietary_checks') %}<p class="error">{{ errors['dietary_checks'] }}</p>{% endif %}
+    <fieldset class="dietary-group">
+      <legend>My diet</legend>
+      <div class="goal-grid dietary-grid">
+      {% for key, emoji, title, hint in diet_cards %}
+        <label class="goal-card">
+          <span class="goal-top"><input type="radio" name="diet" value="{{ key }}" {% if key == choice.key %}checked{% endif %}>
+            <span class="choice-emoji" aria-hidden="true">{{ emoji }}</span>
+            <span><span class="goal-name">{{ title }}</span><br><span class="goal-sub">{{ hint }}</span></span>
+          </span>
+        </label>
+      {% endfor %}
+      </div>
+      <div class="goal-grid dietary-grid dietary-extra">
+        <label class="goal-card">
+          <span class="goal-top"><input type="checkbox" name="dietary_checks" value="halal_friendly" {% if 'halal_friendly' in selected_checks %}checked{% endif %}>
+            <span class="choice-emoji" aria-hidden="true">🌙</span>
+            <span><span class="goal-name">Halal-friendly</span><br><span class="goal-sub">Also flags pork, gelatine and alcohol words.</span></span>
+          </span>
+        </label>
+      </div>
+    </fieldset>
+    <fieldset class="dietary-group">
+      <legend>Allergens · tick any</legend>
+      <div class="goal-grid dietary-grid">
+      {% for check in dietary_options if check.key in check_details %}
+        {% set emoji, hint = check_details[check.key] %}
+        <label class="goal-card">
+          <span class="goal-top"><input type="checkbox" name="dietary_checks" value="{{ check.key }}" {% if check.key in selected_checks %}checked{% endif %}>
+            <span class="choice-emoji" aria-hidden="true">{{ emoji }}</span>
+            <span><span class="goal-name">{{ check.label }}</span><br><span class="goal-sub">{{ hint }}</span></span>
+          </span>
+        </label>
+      {% endfor %}
+      </div>
+    </fieldset>
+    <label>Other ingredients to avoid <span class="hint">· comma separated</span>
+      <input name="avoid_ingredients" placeholder="e.g. peanuts, maltodextrin" value="{{ values.get('avoid_ingredients', '') }}">
+      {% if errors.get('avoid_ingredients') %}<p class="error">{{ errors['avoid_ingredients'] }}</p>{% endif %}
+    </label>
+    <div class="dietary-notice"><span aria-hidden="true">⚠</span><p><b>These checks can miss things.</b> NutriLenz only searches the ingredient words you enter or confirm. It cannot see “may contain” warnings, processing methods or certifications. If you have an allergy, always read the packaging.</p></div>
+  </section>
+{% endmacro %}
