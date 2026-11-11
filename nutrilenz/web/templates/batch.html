@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% set kind = batch.jobs[0].kind %}
+{% block title %}{{ 'Check label values' if kind == 'extraction' else 'Batch results' }}{% endblock %}
+{% block content %}
+{% if not batch.finished %}
+  <div class="card progress-card" data-batch-url="{{ url_for('batch_status', batch_id=batch.batch_id) }}">
+    <div class="pulse">{{ '📷' if kind == 'extraction' else '🤖' }}</div>
+    <h1>{{ 'Reading your photos' if kind == 'extraction' else 'Analysing your products' }}</h1>
+    <p class="muted">These run at the same time in the background. This page updates by itself.</p>
+    <ul class="job-list" style="margin-top:20px">
+      {% for job in batch.jobs %}
+        <li><span class="spinner"></span><b>#{{ loop.index }}</b> <span class="job-step" data-index="{{ loop.index0 }}">{{ job.step }}</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+
+{% elif kind == 'extraction' %}
+  <div class="page-head">
+    <div><h1>Check what the AI read</h1>
+      <p>Fix anything that looks wrong. Blank means "not on the label". Untick a photo to skip it.</p></div>
+  </div>
+  {% if errors.get('form') %}<p class="form-error">{{ errors.get('form') }}</p>{% endif %}
+  <form method="post" action="{{ url_for('analyse_batch', batch_id=batch.batch_id) }}">
+    {{ m.csrf() }}
+    {% for job in batch.jobs %}
+      <div class="card">
+        {% if job.status.value == 'DONE' %}
+          <label class="choice" style="margin-bottom:14px">
+            <input type="checkbox" name="include_{{ loop.index0 }}" {% if values.get('include_' ~ loop.index0) == 'on' %}checked{% endif %}>
+            <span class="choice-icon">📄</span> Analyse photo #{{ loop.index }} <span class="tick">✓</span></label>
+          {% if job.result.notes %}<div class="warning">🤖 AI note: {{ job.result.notes }}</div>{% endif %}
+          {{ m.product_fields('p' ~ loop.index0 ~ '_', values, errors) }}
+        {% else %}
+          <p class="form-error">Photo #{{ loop.index }}: {{ error_text(job.error_code) }}</p>
+        {% endif %}
+      </div>
+    {% endfor %}
+    <p style="margin-top:16px"><button>Analyse ticked products →</button></p>
+  </form>
+
+{% else %}
+  <div class="page-head"><div><h1>Batch results</h1><p>{{ batch.done_count }} of {{ batch.jobs|length }} analysed.</p></div></div>
+  <div class="card">
+    {% for job in batch.jobs %}
+      {% if job.status.value == 'DONE' %}
+        {% set record = job.result.analysis %}
+        <div class="list-item">
+          {{ m.ring(record.score, 'sm') }}
+          <div class="grow"><span class="row-link">{{ record.product.display_name() }}</span><br>{{ m.flags(record.flag_names()) }}</div>
+          {% if job.result.saved %}<a class="button ghost" href="{{ url_for('analysis_detail', analysis_id=record.analysis_id) }}">View →</a>
+          {% else %}<span class="error">Not saved: {{ error_text(job.result.error_code) }}</span>{% endif %}
+        </div>
+      {% else %}
+        <div class="list-item"><span class="rank">#{{ loop.index }}</span><span class="error">{{ error_text(job.error_code) }}</span></div>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endif %}
+{% endblock %}

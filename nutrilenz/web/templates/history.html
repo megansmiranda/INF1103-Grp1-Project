@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% block title %}History{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>History</h1><p>Everything you've analysed, newest first.</p></div>
+  <a class="button" href="{{ url_for('analyse') }}">+ New analysis</a>
+</div>
+<form method="get" class="card filters">
+  <label>🔎 Search product<input name="q" value="{{ q }}" maxlength="120" placeholder="e.g. cereal"></label>
+  <label>🏷️ Flag
+    <select name="flag">
+      <option value="">All flags</option>
+      {% for f in flags %}<option value="{{ f.name }}" {% if f.name == flag %}selected{% endif %}>{{ f.value.replace('_', ' ').title() }}</option>{% endfor %}
+    </select></label>
+  <button>Filter</button>
+  {% if q or flag %}<a class="button ghost" href="{{ url_for('history') }}">Clear</a>{% endif %}
+</form>
+<div class="card">
+  {% if records %}
+  <table>
+    <thead><tr><th>Score</th><th>Product</th><th>Flags</th><th>Date</th><th></th></tr></thead>
+    <tbody>
+    {% for r in records %}
+    <tr>
+      <td>{{ m.ring(r.score, 'sm') }}</td>
+      <td><a class="row-link" href="{{ url_for('analysis_detail', analysis_id=r.analysis_id) }}">{{ r.product.display_name() }}</a><br>
+          <span class="hint">{{ r.product.category or '' }}</span></td>
+      <td>{{ m.flags(r.flag_names()) }}</td>
+      <td class="hint">{{ r.analysed_at.strftime('%d %b %Y') }}<br>{{ r.analysed_at.strftime('%H:%M') }}</td>
+      <td><form method="post" action="{{ url_for('delete_analysis', analysis_id=r.analysis_id) }}" data-confirm="Delete this analysis?">
+            {{ m.csrf() }}<button class="link danger" title="Delete">🗑️</button></form></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}{{ m.empty('🗂️', 'No analyses match.') }}{% endif %}
+</div>
+{% endblock %}

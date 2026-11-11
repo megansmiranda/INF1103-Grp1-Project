@@ -1,0 +1,134 @@
+{% macro err(errors, name) %}
+  {% if errors.get(name) %}<p class="error">{{ errors.get(name) }}</p>{% endif %}
+{% endmacro %}
+
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endmacro %}
+
+{% macro product_fields(prefix, values, errors) %}
+  <div class="grid two">
+    <label>Product name *<input name="{{ prefix }}product_name" maxlength="120" placeholder="e.g. Honey Oat Bar" value="{{ values.get(prefix ~ 'product_name', '') }}">{{ err(errors, prefix ~ 'product_name') }}</label>
+    <label>Brand<input name="{{ prefix }}brand" maxlength="80" placeholder="optional" value="{{ values.get(prefix ~ 'brand', '') }}">{{ err(errors, prefix ~ 'brand') }}</label>
+    <label>Category<input name="{{ prefix }}category" maxlength="60" placeholder="e.g. Cereal, Snack, Drink" value="{{ values.get(prefix ~ 'category', '') }}">{{ err(errors, prefix ~ 'category') }}</label>
+    <label>Marketing claim<input name="{{ prefix }}marketing_claim" maxlength="255" placeholder="e.g. Low Sugar (blank if none)" value="{{ values.get(prefix ~ 'marketing_claim', '') }}">{{ err(errors, prefix ~ 'marketing_claim') }}</label>
+  </div>
+  <label>Ingredient list <span class="hint">· leave blank if it is not on the label</span><textarea name="{{ prefix }}ingredient_text" rows="3" maxlength="2000" placeholder="Copy the ingredients exactly as printed">{{ values.get(prefix ~ 'ingredient_text', '') }}</textarea>{{ err(errors, prefix ~ 'ingredient_text') }}</label>
+  <fieldset>
+    <legend>Nutrition per serving <span class="hint">· leave blank if it is not on the label (blank is not zero)</span></legend>
+    <div class="nutrient-grid">
+      {% for n in nutrients %}
+        <label>{{ n.label }}
+          <span class="input-unit"><input name="{{ prefix }}n_{{ n.key }}" inputmode="decimal" value="{{ values.get(prefix ~ 'n_' ~ n.key, '') }}"><span class="unit">{{ n.unit }}</span></span>
+          {{ err(errors, prefix ~ 'n_' ~ n.key) }}</label>
+      {% endfor %}
+    </div>
+    {{ err(errors, prefix ~ 'nutrition') }}
+  </fieldset>
+{% endmacro %}
+
+{% set goal_icons = {'REDUCE_SUGAR': '🍬', 'HIGH_PROTEIN': '💪', 'LOWER_SODIUM': '🧂', 'LOW_CALORIES': '🔥',
+                     'LOW_FAT': '🥑', 'LOW_SATURATED_FAT': '🧈', 'LOW_CARB': '🍞', 'HIGH_FIBRE': '🌾'} %}
+
+{% macro goal_fields(presets, values, errors, include_avoid=true, numbered=false) %}
+  <fieldset>
+    <legend class="form-section-title">{% if numbered %}<span class="section-number">2</span> {% endif %}Your goals <span class="hint">· pick 1 to 5, targets are per serving</span></legend>
+    {{ err(errors, 'goals') }}
+    <div class="goal-grid">
+      {% for name, pair in presets.items() %}
+        {% set nutrient, direction = pair %}
+        <label class="goal-card">
+          <span class="goal-top">
+            <input type="checkbox" name="goal_{{ name }}" {% if values.get('goal_' ~ name) == 'on' %}checked{% endif %}>
+            <span style="font-size:1.3rem">{{ goal_icons.get(name, '🎯') }}</span>
+            <span><span class="goal-name">{{ name.replace('_', ' ').title() }}</span><br>
+              <span class="goal-sub">{{ nutrient.label }} {{ 'at most' if direction == 'MAX' else 'at least' }}…</span></span>
+          </span>
+          <span class="target-row input-unit">
+            <input name="target_{{ name }}" inputmode="decimal" placeholder="Target" value="{{ values.get('target_' ~ name, '') }}"><span class="unit">{{ nutrient.unit }}</span>
+          </span>
+          {{ err(errors, 'target_' ~ name) }}
+        </label>
+      {% endfor %}
+    </div>
+  </fieldset>
+  {% if include_avoid %}<label>Ingredients to avoid <span class="hint">· comma separated</span>
+    <input name="avoid_ingredients" placeholder="e.g. peanuts, maltodextrin" value="{{ values.get('avoid_ingredients', '') }}">
+    {{ err(errors, 'avoid_ingredients') }}</label>{% endif %}
+{% endmacro %}
+
+{% set flag_icons = {'GOOD_MATCH': '✅', 'GOAL_MISMATCH': '⛔', 'CLAIM_REVIEW': '⚠️', 'MANUAL_REVIEW': '🔎'} %}
+
+{% macro flags(names) %}
+  {% for name in names %}<span class="flag {{ name|lower }}">{{ flag_icons.get(name, '') }} {{ name.replace('_', ' ') }}</span>{% else %}<span class="flag none">NO FLAGS</span>{% endfor %}
+{% endmacro %}
+
+{% macro ring(score, size='') %}
+  <div class="ring {{ size }} {{ 'low' if score < 50 else ('mid' if score < 75 else '') }}" style="--p: {{ score }}" title="Fit with your goals, 0-100">
+    <b>{{ '%g'|format(score) }}{% if not size %}<small>/ 100</small>{% endif %}</b>
+  </div>
+{% endmacro %}
+
+{% macro goal_results(results) %}
+  <div class="goal-results">
+    {% for result in results %}
+      <div class="goal-result">
+        <span class="gr-icon">{{ {'MET': '✅', 'MISMATCH': '❌', 'MISSING': '❔'}[result.status.value] }}</span>
+        <span class="gr-text">{{ result.description }}</span>
+        <span class="gr-value">{{ result.value_text() }}</span>
+        <span class="status {{ result.status.value|lower }}">{{ result.status.value }}</span>
+      </div>
+    {% endfor %}
+  </div>
+{% endmacro %}
+
+{% macro suggested_products(products) %}
+  {% if products %}
+    <div class="suggest">
+      <h3>🛒 Products to try in Singapore</h3>
+      <p class="hint">AI suggestions — not checked against any shop. Check availability and the label in store.</p>
+      <ul class="suggest-list">{% for p in products %}<li><span><b>{{ p.display_name() }}</b><br><span class="hint">{{ p.reason }}</span></span></li>{% endfor %}</ul>
+    </div>
+  {% endif %}
+{% endmacro %}
+
+{% macro analysis_result(record) %}
+  {% set ai = record.ai_analysis %}
+  <div class="card">
+    <div class="result-head">
+      {{ ring(record.score) }}
+      <div class="grow">
+        <p class="section-label">{{ record.product.category or 'Product' }}</p>
+        <h1 style="margin-bottom:6px">{{ record.product.display_name() }}</h1>
+        <div>{{ flags(record.flag_names()) }}</div>
+      </div>
+    </div>
+  </div>
+  {% from "_dietary.html" import dietary_card, confirmed_ingredients with context %}
+  <div class="result-match-grid">
+    <section class="card match-card goals-card" aria-label="Your goals">
+      <div class="card-title"><span class="icon-bubble" aria-hidden="true">&#127919;</span>
+        <div><h2>Your goals</h2><p class="hint match-summary">{{ record.goal_results|selectattr('status.value', 'equalto', 'MET')|list|length }} of {{ record.goal_results|length }} met</p></div>
+      </div>
+      {{ goal_results(record.goal_results) }}
+      <p class="hint match-footer">Analysed {{ record.analysed_at.strftime('%d %b %Y, %H:%M') }} &middot; AI service: {{ record.provider }}</p>
+    </section>
+    {{ dietary_card(record) }}
+  </div>
+  {{ confirmed_ingredients(record) }}
+  <div class="ai-explanation" style="margin-top:16px">
+    <div class="card">
+      <div class="card-title"><span class="icon-bubble violet">🤖</span><h2>What the AI says</h2></div>
+      <div class="ai-box">{{ ai.explanation }}</div>
+      <div class="meta">
+        <span class="tag">🎯 Alignment: {{ ai.goal_alignment.replace('_', ' ').title() }}</span>
+        <span class="tag">📣 Claim: {{ ai.claim_status.replace('_', ' ').title() }}</span>
+        <span class="tag">📶 Confidence: {{ ai.confidence.title() }}</span>
+      </div>
+      {% if ai.relevant_ingredients %}<p><b>Ingredients to note:</b> {{ ai.relevant_ingredients|join(', ') }}</p>{% endif %}
+      <details><summary>Evidence from the label</summary><ul>{% for e in ai.evidence %}<li>{{ e }}</li>{% endfor %}</ul></details>
+      {% if ai.suggestions %}<h3>Tips</h3><ul class="tips">{% for s in ai.suggestions %}<li>{{ s }}</li>{% endfor %}</ul>{% endif %}
+      {{ suggested_products(ai.suggested_products) }}
+    </div>
+  </div>
+{% endmacro %}
+
+{% macro empty(emoji, text) %}<div class="empty"><span class="big-emoji">{{ emoji }}</span>{{ text }}</div>{% endmacro %}

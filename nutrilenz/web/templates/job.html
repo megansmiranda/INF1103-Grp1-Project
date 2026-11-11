@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% from "_recommendation_dietary.html" import dietary_summary, dietary_exclusions %}
+{% block title %}{{ 'Recommendations' if job.kind == 'recommendation' else 'Analysis' }}{% endblock %}
+{% block content %}
+{% if not job.finished %}
+  <div class="card progress-card" data-poll-url="{{ url_for('job_status', job_id=job.job_id) }}">
+    <div class="pulse">{{ '✨' if job.kind == 'recommendation' else '🤖' }}</div>
+    <h1>{{ 'Finding recommendations' if job.kind == 'recommendation' else 'Analysing your label' }}</h1>
+    <p class="poll-step" style="font-weight:700">{{ job.step }}…</p>
+    <div class="bar"></div>
+    <p class="muted" style="margin-top:16px">This runs in the background — you can leave this page and come back.</p>
+  </div>
+
+{% elif job.status.value == 'FAILED' %}
+  <div class="card progress-card">
+    <div class="pulse" style="background:var(--red-soft);animation:none">😕</div>
+    <h1>That did not work</h1>
+    <p>{{ error_text(job.error_code) }}</p>
+    <p class="muted">No new record was saved.</p>
+    <a class="button" href="{{ url_for('analyse' if job.kind == 'analysis' else 'recommendations') }}">Try again</a>
+  </div>
+
+{% elif job.kind == 'analysis' %}
+  {% if not job.result.saved %}
+    <div class="warning">⚠️ The analysis finished but could not be saved: {{ error_text(job.result.error_code) }}</div>
+  {% endif %}
+  {{ m.analysis_result(job.result.analysis) }}
+  <p style="margin-top:16px"><a class="button" href="{{ url_for('analyse') }}">Analyse another</a>
+     <a class="button ghost" href="{{ url_for('history') }}">Go to history</a></p>
+
+{% else %}
+  {% set rec = job.result %}
+  {{ dietary_summary(rec.dietary_labels) }}
+  <div class="page-head">
+    <div><h1>✨ Recommended for you</h1>
+      <p>Ranked from products saved in NutriLenz for <b>{{ rec.options_text }}</b>, explained by the AI.</p></div>
+    <a class="button ghost" href="{{ url_for('recommendations') }}">Change options</a>
+  </div>
+  {% if rec.is_empty() %}
+    <div class="card">{{ m.empty('🔍', 'No saved products fit these options yet. Analyse more products to grow the catalogue.') }}</div>
+  {% endif %}
+  <div class="stack">
+  {% for item in rec.items() %}
+    <div class="card hover">
+      <div class="result-head">
+        <span class="rank r{{ loop.index }}">{{ ['🥇', '🥈', '🥉'][loop.index0] if loop.index <= 3 else loop.index }}</span>
+        <div class="grow">
+          <h2 style="margin:0">{{ item.product.display_name() }}</h2>
+          <span class="hint">{{ item.product.category or '' }}</span>
+          <p class="reason">{{ rec.reason_for(item.product.product_id) }}</p>
+          {% if item.ingredients_unknown %}<p class="hint">Ingredients unknown – not checked</p>{% endif %}
+        </div>
+        {{ m.ring(item.score) }}
+      </div>
+      {{ m.goal_results(item.goal_results) }}
+    </div>
+  {% endfor %}
+  </div>
+  {{ dietary_exclusions(rec.excluded) }}
+  <div class="split" style="margin-top:16px">
+    {% if rec.suggested_products %}<div class="card">{{ m.suggested_products(rec.suggested_products) }}</div>{% endif %}
+    {% if rec.tips %}<div class="card"><h3>Tips</h3><ul class="tips">{% for t in rec.tips %}<li>{{ t }}</li>{% endfor %}</ul></div>{% endif %}
+  </div>
+{% endif %}
+{% endblock %}

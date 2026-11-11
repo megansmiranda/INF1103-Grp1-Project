@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% from "_dietary_fields.html" import dietary_fields with context %}
+{% block title %}My goals{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>My goals</h1><p>These settings are used every time you analyse a product.</p></div>
+</div>
+<form method="post" class="profile-form" data-dietary-form>
+  {{ m.csrf() }}
+  <details class="card nutrition-settings" {% if errors %}open{% endif %}>
+    <summary><span><strong>Nutrition goals</strong><span class="nutrition-summary">{{ current_user.profile.describe_goals()|join(' · ') }}</span></span><span class="edit-goals">Edit goals</span></summary>
+    {{ m.goal_fields(presets, values, errors, include_avoid=false) }}
+  </details>
+  <div class="card profile-dietary-card">
+    {{ dietary_fields(selected_checks, errors, values) }}
+  </div>
+    <div class="dietary-actions"><button>Save profile</button><a class="button ghost" href="{{ url_for('profile') }}">Cancel</a></div>
+</form>
+<div class="card danger-zone">
+  <div class="card-title"><span class="icon-bubble" style="background:var(--red-soft)">🗑️</span>
+    <div><h2>Delete account</h2><p class="muted" style="margin:0">Deletes your account and saved analyses. Products stay in the shared catalogue.</p></div></div>
+  <form method="post" action="{{ url_for('delete_account') }}" class="filters" data-confirm="Delete your account and all your analyses? This cannot be undone.">
+    {{ m.csrf() }}
+    <label>Confirm with your password<input type="password" name="password" autocomplete="current-password"></label>
+    <button class="danger">Delete my account</button>
+  </form>
+</div>
+{% endblock %}

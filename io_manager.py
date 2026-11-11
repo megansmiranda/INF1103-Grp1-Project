@@ -332,173 +332,226 @@ def _fmt(value: float | None, unit: str) -> str:
     return "{:g} {}".format(value, unit)
 
 
+class ProductIOManager:
+    """Collect and confirm product details for analysis."""
+
+    def collect_product_name(self, profile: dict) -> str:
+        """Ask for the product name before collecting the rest of its label."""
+        print("\n--- ANALYSE A PRODUCT ---")
+        print("Profile: {} | {}".format(profile["profile_name"], describe_target(profile)))
+        return read_required_text("Product name: ")
+
+    def confirm_repeat_analysis(self, product_name: str, previous_count: int) -> bool:
+        """Ask whether to continue after a product reaches the repeat-analysis threshold."""
+        prompt = ("You have analysed {} {} times with this profile.\n"
+                  "Would you like to analyse it again? (Y/Yes or N/No): ").format(
+                      product_name, previous_count)
+        return read_yes_no(prompt)
+
+    def collect_product(self, profile: dict, product_name: str) -> dict | None:
+        """Ask for one product label. Returns a product dictionary,
+        or None if the user answers no at the confirmation step."""
+        print("Enter nutrition values PER SERVING. Press Enter if a value is not on the label.")
+
+        brand = read_optional_text("Brand (optional): ")
+        category = read_optional_text("Category (optional): ")
+        sugar = read_number("Sugar per serving (g; 'none' if missing): ", allow_missing=True, allow_zero=True, max_value=MAX_SUGAR_G)
+        protein = read_number("Protein per serving (g; 'none' if missing): ", allow_missing=True, allow_zero=True, max_value=MAX_PROTEIN_G)
+        sodium = read_number("Sodium per serving (mg; 'none' if missing): ", allow_missing=True, allow_zero=True, max_value=MAX_SODIUM_MG)
+        ingredients = read_required_text("Ingredients (copy from label): ")
+        claim = read_optional_text("Marketing claim (optional, e.g. 'Low Sugar'): ")
+
+        product = {
+            "product_name": product_name,
+            "brand": brand,
+            "category": category,
+            "nutrition": {"sugar_g": sugar, "protein_g": protein, "sodium_mg": sodium},
+            "ingredient_text": ingredients,
+            "marketing_claim": claim,
+        }
+
+        if self.confirm_product(product, profile):
+            return product
+        return None
+
+    def confirm_product(self, product: dict, profile: dict) -> bool:
+        """Show a summary of what was typed and ask yes/no. Returns True or False."""
+        n = product["nutrition"]
+        print("\n--- PLEASE CONFIRM ---")
+        print("Profile: {} | {}".format(profile["profile_name"], describe_target(profile)))
+        print("Product: {} | Brand: {} | Category: {}".format(
+            product["product_name"], product["brand"] or "Not provided",
+            product["category"] or "Not provided"))
+        print("Ingredients: " + product["ingredient_text"])
+        print("Sugar: {} | Protein: {} | Sodium: {} (per serving)".format(
+            _fmt(n["sugar_g"], "g"), _fmt(n["protein_g"], "g"), _fmt(n["sodium_mg"], "mg")))
+        print("Marketing claim: " + (product["marketing_claim"] or "None"))
+        avoid = profile["avoid_ingredients"]
+        print("Ingredients to avoid: " + (", ".join(avoid) if avoid else "No avoidance preferences entered"))
+        return read_yes_no("Analyse this product? (Y/Yes or N/No): ")
+
+
+_product_io_manager = ProductIOManager()
+
+
+# Keep the existing main.py function calls working while their implementation
+# is handled by the ProductIOManager instance above.
 def collect_product_name(profile: dict) -> str:
-    """Ask for the product name before collecting the rest of its label."""
-    print("\n--- ANALYSE A PRODUCT ---")
-    print("Profile: {} | {}".format(profile["profile_name"], describe_target(profile)))
-    return read_required_text("Product name: ")
+    return _product_io_manager.collect_product_name(profile)
 
 
 def confirm_repeat_analysis(product_name: str, previous_count: int) -> bool:
-    """Ask whether to continue after a product reaches the repeat-analysis threshold."""
-    prompt = ("You have analysed {} {} times with this profile.\n"
-              "Would you like to analyse it again? (Y/Yes or N/No): ").format(
-                  product_name, previous_count)
-    return read_yes_no(prompt)
+    return _product_io_manager.confirm_repeat_analysis(product_name, previous_count)
 
 
 def collect_product(profile: dict, product_name: str) -> dict | None:
-    """Ask for one product label. Returns a product dictionary,
-    or None if the user answers no at the confirmation step."""
-    print("Enter nutrition values PER SERVING. Press Enter if a value is not on the label.")
-
-    brand = read_optional_text("Brand (optional): ")
-    category = read_optional_text("Category (optional): ")
-    sugar = read_number("Sugar per serving (g; 'none' if missing): ", allow_missing=True, allow_zero=True, max_value=MAX_SUGAR_G)
-    protein = read_number("Protein per serving (g; 'none' if missing): ", allow_missing=True, allow_zero=True, max_value=MAX_PROTEIN_G)
-    sodium = read_number("Sodium per serving (mg; 'none' if missing): ", allow_missing=True, allow_zero=True, max_value=MAX_SODIUM_MG)
-    ingredients = read_required_text("Ingredients (copy from label): ")
-    claim = read_optional_text("Marketing claim (optional, e.g. 'Low Sugar'): ")
-
-    product = {
-        "product_name": product_name,
-        "brand": brand,
-        "category": category,
-        "nutrition": {"sugar_g": sugar, "protein_g": protein, "sodium_mg": sodium},
-        "ingredient_text": ingredients,
-        "marketing_claim": claim,
-    }
-
-    if confirm_product(product, profile):
-        return product
-    return None
+    return _product_io_manager.collect_product(profile, product_name)
 
 
 def confirm_product(product: dict, profile: dict) -> bool:
-    """Show a summary of what was typed and ask yes/no. Returns True or False."""
-    n = product["nutrition"]
-    print("\n--- PLEASE CONFIRM ---")
-    print("Profile: {} | {}".format(profile["profile_name"], describe_target(profile)))
-    print("Product: {} | Brand: {} | Category: {}".format(
-        product["product_name"], product["brand"] or "Not provided",
-        product["category"] or "Not provided"))
-    print("Ingredients: " + product["ingredient_text"])
-    print("Sugar: {} | Protein: {} | Sodium: {} (per serving)".format(
-        _fmt(n["sugar_g"], "g"), _fmt(n["protein_g"], "g"), _fmt(n["sodium_mg"], "mg")))
-    print("Marketing claim: " + (product["marketing_claim"] or "None"))
-    avoid = profile["avoid_ingredients"]
-    print("Ingredients to avoid: " + (", ".join(avoid) if avoid else "No avoidance preferences entered"))
-    return read_yes_no("Analyse this product? (Y/Yes or N/No): ")
+    return _product_io_manager.confirm_product(product, profile)
 
 
 # ===========================================================================
 # PERSON B - B3: display ONE analysis record
 # ===========================================================================
 
+class AnalysisDisplayIOManager:
+    """Display the details and interpretation for one completed analysis."""
+
+    def show_analysis(self, record: dict) -> None:
+        """Display a new or saved analysis using its saved profile snapshot."""
+        snap = record["profile_snapshot"]
+        info = GOAL_INFO[snap["primary_goal"]]
+        ai = record["ai_analysis"]
+        n = record["nutrition"]
+
+        print("\n" + LINE)
+        print(" NUTRILENZ ANALYSIS | " + record["product_name"])
+        print(LINE)
+        if record.get("analysed_at"):
+            print("Analysed on  : " + record["analysed_at"])
+        print("Profile used : {} | {}".format(snap["profile_name"], info["label"]))
+        print("Target used  : " + describe_target(snap))
+        print("Nutrition    : Sugar {} | Protein {} | Sodium {} (per serving)".format(
+            _fmt(n["sugar_g"], "g"), _fmt(n["protein_g"], "g"), _fmt(n["sodium_mg"], "mg")))
+        print("Claim        : " + (record["marketing_claim"] or "None"))
+
+        # Flags come from logic_manager; this class only presents them.
+        print("\nFLAGS:")
+        if record["flags"]:
+            for flag in record["flags"]:
+                print("  [{}] {}".format(flag, FLAG_DESCRIPTIONS.get(flag, "")))
+        else:
+            print("  No positive match issued; see the interpretation below.")
+
+        print("\nAI INTERPRETATION:")
+        print("  Goal alignment : " + ai["goal_alignment"])
+        print("  Claim status   : " + ai["claim_status"])
+        print("  Confidence     : " + ai["confidence"])
+        relevant = ", ".join(ai["relevant_ingredients"]) or "None identified"
+        print("  Relevant ingredients: " + relevant)
+        print("  Evidence:")
+        if ai["evidence"]:
+            for item in ai["evidence"]:
+                print(textwrap.fill(item, width=70, initial_indent="    - ",
+                                    subsequent_indent="      "))
+        else:
+            print("    - None supplied")
+        print("  Explanation:")
+        print(textwrap.fill(ai["explanation"], width=70, initial_indent="    ",
+                            subsequent_indent="    "))
+        print(LINE)
+
+
+_analysis_display_io_manager = AnalysisDisplayIOManager()
+
+
+# Preserve main.py's existing module-level call while the display logic is
+# managed by AnalysisDisplayIOManager.
 def show_analysis(record: dict) -> None:
-    """RECORD VIEW: display a completed (new or saved) analysis.
-    Uses record['profile_snapshot'] so old records show the OLD target."""
-    snap = record["profile_snapshot"]
-    info = GOAL_INFO[snap["primary_goal"]]
-    ai = record["ai_analysis"]
-    n = record["nutrition"]
-
-    print("\n" + LINE)
-    print(" NUTRILENZ ANALYSIS | " + record["product_name"])
-    print(LINE)
-    if record.get("analysed_at"):
-        print("Analysed on  : " + record["analysed_at"])
-    print("Profile used : {} | {}".format(snap["profile_name"], info["label"]))
-    print("Target used  : " + describe_target(snap))
-    print("Nutrition    : Sugar {} | Protein {} | Sodium {} (per serving)".format(
-        _fmt(n["sugar_g"], "g"), _fmt(n["protein_g"], "g"), _fmt(n["sodium_mg"], "mg")))
-    print("Claim        : " + (record["marketing_claim"] or "None"))
-
-    # Flags decided by logic_manager - we only display them
-    print("\nFLAGS:")
-    if record["flags"]:
-        for flag in record["flags"]:
-            print("  [{}] {}".format(flag, FLAG_DESCRIPTIONS.get(flag, "")))
-    else:
-        print("  No positive match issued; see the interpretation below.")
-
-    # AI interpretation fields
-    print("\nAI INTERPRETATION:")
-    print("  Goal alignment : " + ai["goal_alignment"])
-    print("  Claim status   : " + ai["claim_status"])
-    print("  Confidence     : " + ai["confidence"])
-    relevant = ", ".join(ai["relevant_ingredients"]) or "None identified"
-    print("  Relevant ingredients: " + relevant)
-    print("  Evidence:")
-    if ai["evidence"]:
-        for item in ai["evidence"]:
-            print(textwrap.fill(item, width=70, initial_indent="    - ",
-                                subsequent_indent="      "))
-    else:
-        print("    - None supplied")
-    print("  Explanation:")
-    print(textwrap.fill(ai["explanation"], width=70, initial_indent="    ",
-                        subsequent_indent="    "))
-    print(LINE)
+    _analysis_display_io_manager.show_analysis(record)
 
 # ===========================================================================
 # PERSON B - B4: history list (summary view)
 # ===========================================================================
 
+class HistoryIOManager:
+    """Display saved analyses and collect history-related user choices."""
+
+    def show_history(self, records: list[dict],
+                     active_profile: dict) -> tuple[str, dict | None]:
+        """Show analyses and return the selected action and record."""
+        if not records:
+            print("No previous analyses for this profile.")
+            return "back", None
+
+        print("\n--- PREVIOUS ANALYSES | {} ---".format(active_profile["profile_name"]))
+        for number, record in enumerate(records, start=1):
+            brand = record["brand"] or "Not provided"
+            timestamp = self._format_timestamp(record.get("analysed_at"))
+
+            goal = GOAL_INFO[record["profile_snapshot"]["primary_goal"]]["label"]
+            flags = ", ".join(
+                FLAG_DESCRIPTIONS.get(flag, flag.replace("_", " ").title())
+                for flag in record["flags"]
+            ) or "No flags"
+            print("{}. {} | {} | {}".format(
+                number, record["product_name"], brand, timestamp))
+            print("   {} | {}".format(goal, flags))
+        print("0. Back")
+        print("D. Delete an analysis")
+
+        allowed = [str(n) for n in range(0, len(records) + 1)]
+        choice = read_choice("Select an analysis or choose an option: ", allowed + ["D", "d"])
+        if choice == "0":
+            return "back", None
+        if choice.upper() == "D":
+            print("Select an analysis to delete:")
+            delete_choice = read_choice("Analysis number (0 to cancel): ", allowed)
+            if delete_choice == "0":
+                return "back", None
+            record = records[int(delete_choice) - 1]
+            if not self.confirm_delete_analysis(record):
+                print("Deletion cancelled.")
+                return "back", None
+            return "delete", record
+        return "view", records[int(choice) - 1]
+
+    @staticmethod
+    def _format_timestamp(timestamp: str | None) -> str:
+        """Format saved timestamps for the history list; label missing dates."""
+        if not timestamp:
+            return "Date unavailable"
+
+        try:
+            analysed_at = datetime.fromisoformat(timestamp)
+        except (TypeError, ValueError):
+            return timestamp
+
+        date_format = "%d %b %Y %H:%M"
+        if analysed_at.second or analysed_at.microsecond:
+            date_format += ":%S"
+        formatted = analysed_at.strftime(date_format)
+        if analysed_at.utcoffset() is not None:
+            offset = analysed_at.strftime("%z")
+            formatted += " {}:{}".format(offset[:3], offset[3:])
+        return formatted
+
+    @staticmethod
+    def confirm_delete_analysis(record: dict) -> bool:
+        """Ask for explicit confirmation before deleting a saved analysis."""
+        return read_yes_no(
+            "Delete the analysis for {}? (Y/Yes or N/No): ".format(record["product_name"]))
+
+
+_history_io_manager = HistoryIOManager()
+
+
+# Keep main.py's existing module-level history calls working through the class.
 def show_history(records: list[dict], active_profile: dict) -> tuple[str, dict | None]:
-    """LIST VIEW: show past analyses for this profile.
-    Returns (action, record), or ("back", None) for Back / no records."""
-    if not records:
-        print("No previous analyses for this profile.")
-        return "back", None
+    return _history_io_manager.show_history(records, active_profile)
 
-    print("\n--- PREVIOUS ANALYSES | {} ---".format(active_profile["profile_name"]))
-    for number, record in enumerate(records, start=1):
-        brand = record["brand"] or "Not provided"
-        timestamp = record.get("analysed_at")
-        if timestamp:
-            try:
-                analysed_at = datetime.fromisoformat(timestamp)
-            except (TypeError, ValueError):
-                analysed_at = None
-            if analysed_at is not None:
-                date_format = "%d %b %Y %H:%M"
-                if analysed_at.second or analysed_at.microsecond:
-                    date_format += ":%S"
-                timestamp = analysed_at.strftime(date_format)
-                if analysed_at.utcoffset() is not None:
-                    offset = analysed_at.strftime("%z")
-                    timestamp += " {}:{}".format(offset[:3], offset[3:])
-        else:
-            timestamp = "Date unavailable"
-
-        goal = GOAL_INFO[record["profile_snapshot"]["primary_goal"]]["label"]
-        flags = ", ".join(
-            FLAG_DESCRIPTIONS.get(flag, flag.replace("_", " ").title())
-            for flag in record["flags"]
-        ) or "No flags"
-        print("{}. {} | {} | {}".format(
-            number, record["product_name"], brand, timestamp))
-        print("   {} | {}".format(goal, flags))
-    print("0. Back")
-    print("D. Delete an analysis")
-
-    allowed = [str(n) for n in range(0, len(records) + 1)]
-    choice = read_choice("Select an analysis or choose an option: ", allowed + ["D", "d"])
-    if choice == "0":
-        return "back", None
-    if choice.upper() == "D":
-        print("Select an analysis to delete:")
-        delete_choice = read_choice("Analysis number (0 to cancel): ", allowed)
-        if delete_choice == "0":
-            return "back", None
-        record = records[int(delete_choice) - 1]
-        if not confirm_delete_analysis(record):
-            print("Deletion cancelled.")
-            return "back", None
-        return "delete", record
-    return "view", records[int(choice) - 1]
 
 def confirm_delete_analysis(record: dict) -> bool:
-    """Ask for explicit confirmation before deleting a saved analysis."""
-    return read_yes_no("Delete the analysis for {}? (Y/Yes or N/No): ".format(record["product_name"]))
+    return _history_io_manager.confirm_delete_analysis(record)
