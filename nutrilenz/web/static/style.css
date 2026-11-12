@@ -147,6 +147,21 @@ form.inline { display: inline; }
 .warning { background: var(--amber-soft); color: #78350f; border-radius: 12px; padding: 12px 16px; margin-bottom: 14px; }
 .warning ul { margin: 6px 0 0; padding-left: 20px; }
 
+/* ---------- confirmation box ---------- */
+.confirm-dialog { width: min(420px, calc(100% - 32px)); padding: 28px 26px 22px; border: 0;
+  border-radius: 20px; background: var(--surface); color: var(--text); text-align: center;
+  box-shadow: 0 24px 60px rgba(16, 40, 24, .25); }
+.confirm-dialog::backdrop { background: rgba(21, 36, 28, .45); backdrop-filter: blur(3px); }
+.confirm-dialog[open] { animation: pop-in .16s ease-out; }
+@keyframes pop-in { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: none; } }
+.confirm-icon { display: grid; place-items: center; width: 56px; height: 56px; margin: 0 auto 14px;
+  border-radius: 16px; font-size: 1.6rem; background: var(--red-soft); }
+.confirm-dialog:has(button[value=confirm]:not(.danger)) .confirm-icon { background: var(--brand-soft); }
+.confirm-dialog h2 { margin-bottom: 6px; }
+.confirm-dialog p { margin: 0 0 22px; overflow-wrap: anywhere; }
+.confirm-actions { display: flex; gap: 10px; }
+.confirm-actions button { flex: 1; }
+
 /* ---------- auth pages ---------- */
 .auth { display: grid; grid-template-columns: 1fr 1fr; min-height: calc(100vh - 140px);
   background: var(--surface); border-radius: 24px; overflow: hidden; box-shadow: var(--shadow); }
