@@ -22,7 +22,9 @@
     </table>
   </div>
 </div>
-<form method="post" action="{{ url_for('delete_analysis', analysis_id=record.analysis_id) }}" data-confirm="Delete this analysis?" style="margin-top:16px">
+<form method="post" action="{{ url_for('delete_analysis', analysis_id=record.analysis_id) }}" style="margin-top:16px"
+      data-confirm-title="Delete this analysis?" data-confirm-button="Delete"
+      data-confirm="&quot;{{ record.product.display_name() }}&quot; will be removed from your history. This can't be undone.">
   {{ m.csrf() }}<button class="ghost">🗑️ Delete this analysis</button>
 </form>
 {% endblock %}

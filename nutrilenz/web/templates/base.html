@@ -21,7 +21,9 @@
     </nav>
     <div class="user-menu">
       <span class="avatar" title="{{ current_user.username }}">{{ current_user.username[0] }}</span>
-      <form method="post" action="{{ url_for('logout') }}" class="inline">
+      <form method="post" action="{{ url_for('logout') }}" class="inline"
+            data-confirm="You'll need to log in again to see your goals and history."
+            data-confirm-title="Log out?" data-confirm-button="Log out" data-confirm-icon="👋" data-confirm-tone="neutral">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button class="link">Log out</button>
       </form>
@@ -35,6 +37,15 @@
     {% block content %}{% endblock %}
   </main>
   <footer>Concerns are found by NutriLenz's rules; the AI only explains them.</footer>
+  <dialog class="confirm-dialog" id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+    <div class="confirm-icon" data-confirm-slot="icon">🗑️</div>
+    <h2 id="confirm-title" data-confirm-slot="title">Are you sure?</h2>
+    <p id="confirm-message" class="muted" data-confirm-slot="message"></p>
+    <div class="confirm-actions">
+      <button type="button" class="ghost" value="cancel">Cancel</button>
+      <button type="button" class="danger" value="confirm" data-confirm-slot="button">Delete</button>
+    </div>
+  </dialog>
   <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

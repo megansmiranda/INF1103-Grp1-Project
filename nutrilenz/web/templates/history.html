@@ -28,7 +28,8 @@
           <span class="hint">{{ r.product.category or '' }}</span></td>
       <td>{{ m.flags(r.flag_names()) }}</td>
       <td class="hint">{{ r.analysed_at.strftime('%d %b %Y') }}<br>{{ r.analysed_at.strftime('%H:%M') }}</td>
-      <td><form method="post" action="{{ url_for('delete_analysis', analysis_id=r.analysis_id) }}" data-confirm="Delete this analysis?">
+      <td><form method="post" action="{{ url_for('delete_analysis', analysis_id=r.analysis_id) }}" data-confirm-title="Delete this analysis?" data-confirm-button="Delete"
+            data-confirm="&quot;{{ r.product.display_name() }}&quot; will be removed from your history. This can't be undone.">
             {{ m.csrf() }}<button class="link danger" title="Delete">🗑️</button></form></td>
     </tr>
     {% endfor %}

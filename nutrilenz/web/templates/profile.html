@@ -20,7 +20,8 @@
 <div class="card danger-zone">
   <div class="card-title"><span class="icon-bubble" style="background:var(--red-soft)">🗑️</span>
     <div><h2>Delete account</h2><p class="muted" style="margin:0">Deletes your account and saved analyses. Products stay in the shared catalogue.</p></div></div>
-  <form method="post" action="{{ url_for('delete_account') }}" class="filters" data-confirm="Delete your account and all your analyses? This cannot be undone.">
+  <form method="post" action="{{ url_for('delete_account') }}" class="filters" data-confirm-title="Delete your account?" data-confirm-button="Delete account"
+        data-confirm="Your account and all your saved analyses will be deleted. This can't be undone.">
     {{ m.csrf() }}
     <label>Confirm with your password<input type="password" name="password" autocomplete="current-password"></label>
     <button class="danger">Delete my account</button>

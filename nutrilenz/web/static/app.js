@@ -95,9 +95,56 @@ class VegetarianOptions {
 
 document.querySelectorAll("form[data-dietary-form]").forEach((form) => new VegetarianOptions(form).start());
 
-// Ask before deleting
-document.querySelectorAll("form[data-confirm]").forEach((form) => {
-  form.addEventListener("submit", (event) => {
-    if (!window.confirm(form.dataset.confirm)) event.preventDefault();
+// Shows a styled confirmation box before a form with data-confirm is submitted.
+class ConfirmDialog {
+  constructor(dialog) {
+    this.dialog = dialog;
+    this.slots = {};
+    dialog.querySelectorAll("[data-confirm-slot]").forEach((el) => { this.slots[el.dataset.confirmSlot] = el; });
+    this.form = null;
+  }
+
+  start() {
+    this.dialog.querySelector("button[value=cancel]").addEventListener("click", () => this.dialog.close());
+    this.slots.button.addEventListener("click", () => this.submit());
+    // A click on the dark backdrop closes the box.
+    this.dialog.addEventListener("click", (event) => { if (event.target === this.dialog) this.dialog.close(); });
+    document.querySelectorAll("form[data-confirm]").forEach((form) => {
+      form.addEventListener("submit", (event) => {
+        if (form.dataset.confirmed === "yes") return;
+        event.preventDefault();
+        this.open(form);
+      });
+    });
+  }
+
+  open(form) {
+    const data = form.dataset;
+    this.form = form;
+    this.slots.title.textContent = data.confirmTitle || "Are you sure?";
+    this.slots.message.textContent = data.confirm;
+    this.slots.icon.textContent = data.confirmIcon || "🗑️";
+    this.slots.button.textContent = data.confirmButton || "Confirm";
+    this.slots.button.className = data.confirmTone === "neutral" ? "" : "danger";
+    this.dialog.showModal();
+    this.dialog.querySelector("button[value=cancel]").focus();
+  }
+
+  submit() {
+    this.dialog.close();
+    this.form.dataset.confirmed = "yes";
+    this.form.requestSubmit();
+  }
+}
+
+const confirmBox = document.getElementById("confirm-dialog");
+if (confirmBox && typeof confirmBox.showModal === "function") {
+  new ConfirmDialog(confirmBox).start();
+} else {
+  // Older browsers without <dialog> fall back to the built-in box.
+  document.querySelectorAll("form[data-confirm]").forEach((form) => {
+    form.addEventListener("submit", (event) => {
+      if (!window.confirm(form.dataset.confirm)) event.preventDefault();
+    });
   });
-});
+}
