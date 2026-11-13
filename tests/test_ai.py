@@ -192,6 +192,20 @@ class TestRetryAndFallback:
         assert error.value.code == "NO_IMAGE_PROVIDER" and http.calls == 0
 
 
+def test_live_ai_http_is_blocked():
+    from nutrilenz.ai.http_client import HttpClient
+
+    with pytest.raises(AssertionError, match="Live AI HTTP is forbidden"):
+        HttpClient().post_json("https://example.invalid/ai", {}, {})
+
+
+def test_ai_keys_are_not_inherited_from_environment():
+    import os
+
+    assert "GEMINI_API_KEY" not in os.environ
+    assert "GROQ_API_KEY" not in os.environ
+
+
 class TestExtractionAndRecommendationTasks:
     def reading(self, **changes):
         answer = {"readable": True, "product_name": "Bar", "brand": None, "category": "Snack",

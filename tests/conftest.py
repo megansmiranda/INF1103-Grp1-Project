@@ -1,6 +1,7 @@
 """Shared test helpers. No test needs a live AI API or a running database."""
 import json
 import sys
+import urllib.request
 from pathlib import Path
 
 import pytest
@@ -17,6 +18,18 @@ from nutrilenz.domain.product import Product                       # noqa: E402
 from nutrilenz.domain.profile import Profile                       # noqa: E402
 from nutrilenz.errors.ai_error import AIError                      # noqa: E402
 from nutrilenz.logic.logic_manager import LogicManager             # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def offline_ai(monkeypatch):
+    """Keep every test offline even when Compose supplies a developer's .env."""
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+
+    def reject_live_http(*args, **kwargs):
+        raise AssertionError("Live AI HTTP is forbidden in tests; inject FakeHttp instead")
+
+    monkeypatch.setattr(urllib.request, "urlopen", reject_live_http)
 
 
 class FakeHttp:
