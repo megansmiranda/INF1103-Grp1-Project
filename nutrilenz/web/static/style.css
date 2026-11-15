@@ -576,3 +576,9 @@ button.ghost.danger-text:hover { background: var(--red-soft); border-color: #fec
 
 /* ---------- recommendations ---------- */
 .tips-title .icon { color: #d97706; }
+
+/* ---------- login ---------- */
+.auth-art { position: relative; overflow: hidden; }
+.auth-art::after { content: ""; position: absolute; width: 360px; height: 360px; right: -120px; bottom: -140px;
+  border-radius: 50%; background: rgba(255, 255, 255, .08); }
+.auth-art li span .icon { color: #fff; }
