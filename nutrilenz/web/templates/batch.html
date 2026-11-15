@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 {% import "_macros.html" as m with context %}
+{% from "_icons.html" import icon %}
 {% set kind = batch.jobs[0].kind %}
 {% block title %}{{ 'Check label values' if kind == 'extraction' else 'Batch results' }}{% endblock %}
 {% block content %}
 {% if not batch.finished %}
   <div class="card progress-card" data-batch-url="{{ url_for('batch_status', batch_id=batch.batch_id) }}">
-    <div class="pulse">{{ '📷' if kind == 'extraction' else '🤖' }}</div>
+    <div class="pulse">{{ icon('camera' if kind == 'extraction' else 'bot', 32) }}</div>
     <h1>{{ 'Reading your photos' if kind == 'extraction' else 'Analysing your products' }}</h1>
     <p class="muted">These run at the same time in the background. This page updates by itself.</p>
     <ul class="job-list" style="margin-top:20px">
@@ -17,7 +18,8 @@
 
 {% elif kind == 'extraction' %}
   <div class="page-head">
-    <div><h1>Check what the AI read</h1>
+    <span class="stat-icon lg blue">{{ icon('file', 26) }}</span>
+    <div class="grow"><h1>Check what the AI read</h1>
       <p>Fix anything that looks wrong. Blank means "not on the label". Untick a photo to skip it.</p></div>
   </div>
   {% if errors.get('form') %}<p class="form-error">{{ errors.get('form') }}</p>{% endif %}
@@ -28,8 +30,8 @@
         {% if job.status.value == 'DONE' %}
           <label class="choice" style="margin-bottom:14px">
             <input type="checkbox" name="include_{{ loop.index0 }}" {% if values.get('include_' ~ loop.index0) == 'on' %}checked{% endif %}>
-            <span class="choice-icon">📄</span> Analyse photo #{{ loop.index }} <span class="tick">✓</span></label>
-          {% if job.result.notes %}<div class="warning">🤖 AI note: {{ job.result.notes }}</div>{% endif %}
+            <span class="choice-icon">{{ icon('file', 22) }}</span> {{ 'Use' if mode == 'compare' else 'Analyse' }} photo #{{ loop.index }} <span class="tick">✓</span></label>
+          {% if job.result.notes %}<div class="warning warning-title">{{ icon('bot', 18) }} AI note: {{ job.result.notes }}</div>{% endif %}
           {{ m.product_fields('p' ~ loop.index0 ~ '_', values, errors) }}
         {% else %}
           <p class="form-error">Photo #{{ loop.index }}: {{ error_text(job.error_code) }}</p>
@@ -39,17 +41,17 @@
     {% set readable = batch.jobs|selectattr('status.value', 'equalto', 'DONE')|list|length %}
     <p class="batch-actions">
       {% if mode == 'compare' %}
-        <button formaction="{{ url_for('compare_batch', batch_id=batch.batch_id) }}">Compare side by side →</button>
+        <button formaction="{{ url_for('compare_batch', batch_id=batch.batch_id) }}">Compare side by side {{ icon('arrow', 18) }}</button>
         <button class="ghost">Analyse each one instead</button>
       {% else %}
-        <button>Analyse ticked products →</button>
+        <button>Analyse ticked products {{ icon('arrow', 18) }}</button>
         {% if readable >= 2 %}<button class="ghost" formaction="{{ url_for('compare_batch', batch_id=batch.batch_id) }}">Compare them side by side</button>{% endif %}
       {% endif %}
     </p>
   </form>
 
 {% else %}
-  <div class="page-head"><div><h1>Batch results</h1><p>{{ batch.done_count }} of {{ batch.jobs|length }} analysed.</p></div></div>
+  <div class="page-head"><span class="stat-icon lg green">{{ icon('chart', 26) }}</span><div class="grow"><h1>Batch results</h1><p>{{ batch.done_count }} of {{ batch.jobs|length }} analysed.</p></div></div>
   <div class="card">
     {% for job in batch.jobs %}
       {% if job.status.value == 'DONE' %}
@@ -57,7 +59,7 @@
         <div class="list-item">
           {{ m.ring(record.score, 'sm') }}
           <div class="grow"><span class="row-link">{{ record.product.display_name() }}</span><br>{{ m.flags(record.flag_names()) }}</div>
-          {% if job.result.saved %}<a class="button ghost" href="{{ url_for('analysis_detail', analysis_id=record.analysis_id) }}">View →</a>
+          {% if job.result.saved %}<a class="button ghost" href="{{ url_for('analysis_detail', analysis_id=record.analysis_id) }}">View {{ icon('arrow', 16) }}</a>
           {% else %}<span class="error">Not saved: {{ error_text(job.result.error_code) }}</span>{% endif %}
         </div>
       {% else %}

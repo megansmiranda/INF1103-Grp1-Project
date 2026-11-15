@@ -548,3 +548,11 @@ body { background: radial-gradient(1200px 500px at 85% -10%, #e3f7ea 0%, transpa
 .gr-icon.checked { color: var(--blue); }
 .with-icon { display: flex; align-items: center; gap: 8px; }
 .with-icon .icon { color: #c2410c; }
+
+/* ---------- analyse and label check ---------- */
+.warning-title { display: flex; align-items: center; gap: 8px; }
+.warning .icon { color: var(--amber); }
+.choice .choice-icon .icon { color: var(--brand-dark); }
+.pulse .icon { color: var(--brand-dark); }
+.job-dot { display: inline-block; width: 16px; height: 16px; border-radius: 50%; flex: none; background: var(--brand); }
+.job-dot.failed { background: var(--red); }

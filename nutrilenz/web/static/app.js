@@ -70,7 +70,7 @@ document.querySelectorAll("[data-batch-url]").forEach((box) => {
       step.textContent = job.error ? "Failed: " + job.error : job.step;
       if (job.finished) {
         const spinner = step.parentElement.querySelector(".spinner");
-        if (spinner) spinner.outerHTML = job.error ? "❌" : "✅";
+        if (spinner) spinner.className = job.error ? "job-dot failed" : "job-dot done";
       }
     });
   }).start();
