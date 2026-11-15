@@ -368,6 +368,10 @@ tbody tr:hover td { background: var(--surface-2); }
 .flag.dietary_review { background: #fff2d8; border: 1px solid #f6ba41; color: #895500; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
   clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+/* ---------- icons ---------- */
+.icon { flex: none; display: block; }
+.button .icon, .text-link .icon { display: inline-block; }
+
 @media (max-width: 700px) {
   .result-match-grid { grid-template-columns: 1fr; }
   .goal-grid, .grid.three { grid-template-columns: minmax(0, 1fr); }
