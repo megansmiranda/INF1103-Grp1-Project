@@ -1,11 +1,13 @@
 {% extends "base.html" %}
 {% import "_macros.html" as m with context %}
+{% from "_icons.html" import icon %}
 {% from "_dietary_fields.html" import dietary_fields with context %}
 {% block title %}Sign up{% endblock %}
 {% block content %}
 <div class="page-head">
-  <div><h1>Create your account</h1><p>Pick the goals that matter to you. You can change them any time.</p></div>
-  <a href="{{ url_for('login') }}">Already have an account? Log in →</a>
+  <span class="stat-icon lg green">{{ icon('user', 26) }}</span>
+  <div class="grow"><h1>Create your account</h1><p>Pick the goals that matter to you. You can change them any time.</p></div>
+  <a class="text-link" href="{{ url_for('login') }}">Already have an account? Log in {{ icon('arrow', 16) }}</a>
 </div>
 {% if errors.get('form') %}<p class="form-error">{{ errors.get('form') }}</p>{% endif %}
 <form method="post" class="card" data-dietary-form>
@@ -18,6 +20,6 @@
   </div>
   {{ m.goal_fields(presets, values, errors, include_avoid=false, numbered=true) }}
   {{ dietary_fields(selected_checks, errors, values, numbered=true) }}
-  <button>Create account →</button>
+  <button>Create account {{ icon('arrow', 18) }}</button>
 </form>
 {% endblock %}
