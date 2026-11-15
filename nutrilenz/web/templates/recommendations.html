@@ -1,12 +1,14 @@
 {% extends "base.html" %}
 {% import "_macros.html" as m with context %}
+{% from "_icons.html" import icon %}
 {% from "_recommendation_dietary.html" import dietary_summary %}
 {% block title %}Recommendations{% endblock %}
 {% set focus_icons = {'BEST_MATCH': '🎯', 'LOWEST_SUGAR': '🍬', 'LOWEST_CALORIES': '🔥', 'LOWEST_SODIUM': '🧂',
                       'LOWEST_FAT': '🥑', 'HIGHEST_PROTEIN': '💪', 'HIGHEST_FIBRE': '🌾'} %}
 {% block content %}
 <div class="page-head">
-  <div><h1>Recommendations</h1>
+  <span class="stat-icon lg violet">{{ icon('sparkle', 26) }}</span>
+  <div class="grow"><h1>Recommendations</h1>
     <p>Tick what matters to you. NutriLenz ranks saved products against your goals (skipping anything you avoid),
        then the AI explains the best picks and suggests products to try in Singapore.</p></div>
 </div>
@@ -36,6 +38,6 @@
     </div>
     {{ m.err(errors, 'category') }}
   </fieldset>
-  <button>✨ Get recommendations</button>
+  <button>{{ icon('sparkle', 18) }} Get recommendations</button>
 </form>
 {% endblock %}

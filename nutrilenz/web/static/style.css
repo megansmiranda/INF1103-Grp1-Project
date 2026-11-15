@@ -310,7 +310,9 @@ tbody tr:hover td { background: var(--surface-2); }
 
 /* ---------- recommendations ---------- */
 .rank { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; font-weight: 800; font-size: 1.1rem; background: var(--surface-2); flex: none; }
-.rank.r1 { background: #fef3c7; } .rank.r2 { background: #e5e7eb; } .rank.r3 { background: #fde2cf; }
+.rank.r1 { background: linear-gradient(135deg, #fde68a, #f59e0b); color: #78350f; }
+.rank.r2 { background: linear-gradient(135deg, #f1f5f9, #cbd5e1); color: #334155; }
+.rank.r3 { background: linear-gradient(135deg, #fed7aa, #ea980c); color: #7c2d12; }
 .reason { font-size: 1rem; margin: 6px 0 10px; }
 
 /* ---------- misc ---------- */
@@ -571,3 +573,6 @@ body { background: radial-gradient(1200px 500px at 85% -10%, #e3f7ea 0%, transpa
 .back-link:hover { text-decoration: underline; }
 button.ghost.danger-text { color: var(--red); }
 button.ghost.danger-text:hover { background: var(--red-soft); border-color: #fecaca; }
+
+/* ---------- recommendations ---------- */
+.tips-title .icon { color: #d97706; }

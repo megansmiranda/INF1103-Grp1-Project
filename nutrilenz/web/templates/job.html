@@ -42,7 +42,8 @@
   {% set rec = job.result %}
   {{ dietary_summary(rec.dietary_labels) }}
   <div class="page-head">
-    <div><h1>✨ Recommended for you</h1>
+    <span class="stat-icon lg violet">{{ icon('sparkle', 26) }}</span>
+    <div class="grow"><h1>Recommended for you</h1>
       <p>Ranked from products saved in NutriLenz for <b>{{ rec.options_text }}</b>, explained by the AI.</p></div>
     <a class="button ghost" href="{{ url_for('recommendations') }}">Change options</a>
   </div>
@@ -53,7 +54,7 @@
   {% for item in rec.items() %}
     <div class="card hover">
       <div class="result-head">
-        <span class="rank r{{ loop.index }}">{{ ['🥇', '🥈', '🥉'][loop.index0] if loop.index <= 3 else loop.index }}</span>
+        <span class="rank r{{ loop.index }}" title="Rank {{ loop.index }}">{{ loop.index }}</span>
         <div class="grow">
           <h2 style="margin:0">{{ item.product.display_name() }}</h2>
           <span class="hint">{{ item.product.category or '' }}</span>
@@ -69,7 +70,7 @@
   {{ dietary_exclusions(rec.excluded) }}
   <div class="split" style="margin-top:16px">
     {% if rec.suggested_products %}<div class="card">{{ m.suggested_products(rec.suggested_products) }}</div>{% endif %}
-    {% if rec.tips %}<div class="card"><h3>Tips</h3><ul class="tips">{% for t in rec.tips %}<li>{{ t }}</li>{% endfor %}</ul></div>{% endif %}
+    {% if rec.tips %}<div class="card"><h3 class="with-icon tips-title">{{ icon('bulb', 18) }} Tips</h3><ul class="tips">{% for t in rec.tips %}<li>{{ t }}</li>{% endfor %}</ul></div>{% endif %}
   </div>
 {% endif %}
 {% endblock %}
