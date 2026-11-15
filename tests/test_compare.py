@@ -2,9 +2,14 @@
 Uses fake AI replies, so no API key is needed."""
 import pytest
 
-from conftest import CALORIES_MAX_200, SUGAR_MAX_10, product, profile
+from conftest import CALORIES_MAX_200, SUGAR_MAX_10, Replies, make_ai, product, profile
 from nutrilenz.ai.comparison_task import ComparisonTask
+from nutrilenz.domain.comparison import Comparison
 from nutrilenz.domain.profile import Profile
+from nutrilenz.domain.user import User
+from nutrilenz.errors.ai_error import AIError
+from nutrilenz.services.comparison_service import ComparisonService
+from nutrilenz.services.job import Job
 
 LOW_SUGAR = {"product_name": "Plain Oats", "nutrition": {"sugar_g": 1.0, "calories_kcal": 150.0},
              "ingredient_text": "Whole grain oats", "marketing_claim": None}
@@ -87,3 +92,53 @@ class TestComparisonTask:
     def test_needs_two_products(self, logic):
         with pytest.raises(ValueError):
             ComparisonTask(profile(SUGAR_MAX_10), ranked_pair(logic)[:1])
+
+
+class TestComparisonService:
+    def user(self) -> User:
+        return User("jane", "hash", [SUGAR_MAX_10, CALORIES_MAX_200], [], user_id=1)
+
+    def test_logic_ranks_and_ai_is_called_once(self, logic):
+        ai, gemini, _ = make_ai(Replies.gemini(advice()))
+        job = Job(1, "comparison", [])
+        comparison = ComparisonService(ai, logic).compare(
+            self.user(), [product(**HIGH_SUGAR), product(**LOW_SUGAR)], job)
+        assert gemini.calls == 1
+        assert comparison.winner.product.name == "Plain Oats" and comparison.provider == "gemini"
+        assert comparison.strength(1) == "Point 1 in favour."
+
+    def test_ai_failure_is_reported(self, logic):
+        ai, _, _ = make_ai(AIError("API_UNAVAILABLE"), AIError("API_UNAVAILABLE"))
+        with pytest.raises(AIError):
+            ComparisonService(ai, logic).compare(self.user(), [product(**HIGH_SUGAR), product(**LOW_SUGAR)])
+
+    @pytest.mark.parametrize("count", [1, 5])
+    def test_two_to_four_products_only(self, logic, count):
+        ai, gemini, _ = make_ai()
+        with pytest.raises(ValueError):
+            ComparisonService(ai, logic).compare(self.user(), [product(**LOW_SUGAR)] * count)
+        assert gemini.calls == 0
+
+
+class TestComparisonDomain:
+    def test_goal_rows_line_up_by_goal(self, logic):
+        comparison = Comparison(1, ranked_pair(logic), "s", {1: "a", 2: "b"}, {1: "c", 2: "d"}, "gemini")
+        rows = comparison.goal_rows()
+        assert [label for label, _ in rows] == ["Sugar at most 10 g per serving",
+                                                "Calories at most 200 kcal per serving"]
+        assert rows[0][1][0].value == 1.0 and rows[0][1][1].value == 18.0
+
+    def test_winner_is_not_clean_when_every_product_has_a_problem(self, logic):
+        user_profile = profile(SUGAR_MAX_10, avoid=["sugar"])
+        ranked = logic.compare([product(**HIGH_SUGAR), product(**dict(LOW_SUGAR, ingredient_text="Oats, sugar"))],
+                               user_profile)
+        matches = {rank: item.product.ingredients_found(["sugar"]) for rank, item in enumerate(ranked, 1)}
+        comparison = Comparison(1, ranked, "s", {}, {}, "gemini", matches)
+        assert not comparison.winner_is_clean and not comparison.is_close_call
+        assert comparison.avoid_matches(1) == ("sugar",)
+
+    def test_close_call(self, logic):
+        twins = logic.compare([product(**LOW_SUGAR), product(**dict(LOW_SUGAR, product_name="Oats B"))],
+                              profile(SUGAR_MAX_10))
+        assert Comparison(1, twins, "s", {}, {}, "gemini").is_close_call
+        assert not Comparison(1, ranked_pair(logic), "s", {}, {}, "gemini").is_close_call
