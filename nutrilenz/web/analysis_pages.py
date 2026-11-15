@@ -1,7 +1,8 @@
-from flask import Flask, jsonify, redirect, render_template, request, url_for
+from flask import Flask, flash, jsonify, redirect, render_template, request, url_for
 
 from ..errors.error_messages import ErrorMessages
 from ..errors.validation_error import ValidationError
+from ..services.comparison_service import ComparisonService
 from ..services.job import Job
 from ..services.job_status import JobStatus
 from .page_controller import PageController
@@ -44,13 +45,23 @@ class AnalysisPages(PageController):
         return redirect(url_for("job", job_id=job.job_id))
 
     def upload(self):
+        compare = request.form.get("mode") == "compare"
         try:
             images = self._ctx.forms.photos(request.files.getlist("photos"))
         except ValidationError as error:
+            if compare:
+                flash(error.field_errors.get("photos", "Those photos could not be used."))
+                return redirect(url_for("compare"))
             return render_template("analyse.html", errors=error.field_errors,
                                    values={}, warnings=[]), 400
+        if compare and not ComparisonService.MIN_PRODUCTS <= len(images) <= ComparisonService.MAX_PRODUCTS:
+            flash(f"Choose {ComparisonService.MIN_PRODUCTS} to {ComparisonService.MAX_PRODUCTS} "
+                  "photos, one for each product.")
+            return redirect(url_for("compare"))
         works = [self._reader(image) for image in images]
         batch = self._ctx.jobs.submit_batch(self._user.user_id, "extraction", works)
+        if compare:
+            return redirect(url_for("batch", batch_id=batch.batch_id, mode="compare"))
         return redirect(url_for("batch", batch_id=batch.batch_id))
 
     def _reader(self, image):
@@ -76,7 +87,8 @@ class AnalysisPages(PageController):
             for index, job in enumerate(batch.jobs):
                 if job.status is JobStatus.DONE:
                     values.update(self._prefill(index, job))
-        return render_template("batch.html", batch=batch, values=values, errors={})
+        return render_template("batch.html", batch=batch, values=values, errors={},
+                               mode=request.args.get("mode", ""))
 
     def analyse_batch(self, batch_id: str):
         batch = self._batch_or_404(batch_id)

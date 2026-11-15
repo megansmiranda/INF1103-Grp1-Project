@@ -1,0 +1,74 @@
+{% import "_macros.html" as m with context %}
+{% from "_icons.html" import icon %}
+
+{% macro comparison_result(c) %}
+{% set winner = c.winner %}
+<section class="card winner-card {{ 'not-clean' if not c.winner_is_clean }}">
+  {% if c.winner_is_clean %}<div class="winner-badge">{{ icon('check', 16) }} Best fit for your goals</div>
+  {% else %}<div class="winner-badge">{{ icon('alert', 16) }} Highest score, but check the label</div>{% endif %}
+  <div class="result-head">
+    {{ m.ring(winner.score) }}
+    <div class="grow">
+      <p class="section-label">{{ winner.product.category or 'Product' }}</p>
+      <h1 style="margin-bottom:6px">{{ winner.product.display_name() }}</h1>
+      <p class="winner-summary">{{ c.summary }}</p>
+      {% if not c.winner_is_clean %}<p class="close-call not-clean-note">{{ icon('alert', 16) }} None of these products is clear of your dietary checks and avoid list. Check the rows below before buying.</p>{% endif %}
+      {% if c.is_close_call %}<p class="close-call">{{ icon('info', 16) }} Close call: {{ c.ranked[1].product.display_name() }} scores within 5 points, so either is a reasonable pick.</p>{% endif %}
+    </div>
+  </div>
+</section>
+
+<div class="compare-scroll">
+  <div class="compare-table" style="--cols: {{ c.ranked|length }}">
+    <div class="ct-head ct-corner">Side by side</div>
+    {% for item in c.ranked %}
+      <div class="ct-head {{ 'is-winner' if loop.first }}">
+        <span class="rank r{{ loop.index }}">{{ loop.index }}</span>
+        <b>{{ item.product.display_name() }}</b>
+        {{ m.ring(item.score, 'sm') }}
+      </div>
+    {% endfor %}
+
+    {% for description, results in c.goal_rows() %}
+      <div class="ct-label">{{ description }}</div>
+      {% for result in results %}
+        <div class="ct-cell {{ 'is-winner' if loop.first }}">
+          <span class="status {{ result.status.value|lower }}">{{ result.status.value }}</span>
+          <span class="ct-value">{{ result.value_text() }}</span>
+        </div>
+      {% endfor %}
+    {% endfor %}
+
+    <div class="ct-label">Dietary checks</div>
+    {% for item in c.ranked %}
+      <div class="ct-cell {{ 'is-winner' if loop.first }}">
+        {% set report = item.dietary_report %}
+        {% if not report.results %}<span class="hint">None selected</span>
+        {% elif report.has_concern %}<span class="status mismatch">{{ report.concern_count }} possible concern{{ 's' if report.concern_count != 1 }}</span>
+        {% elif item.ingredients_unknown %}<span class="status missing">Not checked</span>
+        {% else %}<span class="status met">No matches</span>{% endif %}
+      </div>
+    {% endfor %}
+
+    <div class="ct-label">Avoid list</div>
+    {% for item in c.ranked %}
+      {% set found = c.avoid_matches(loop.index) %}
+      <div class="ct-cell {{ 'is-winner' if loop.first }}">
+        {% if found %}<span class="status mismatch">Contains {{ found|join(', ') }}</span>
+        {% else %}<span class="hint">None found</span>{% endif %}
+      </div>
+    {% endfor %}
+
+    <div class="ct-label">Why it's good</div>
+    {% for item in c.ranked %}
+      <div class="ct-cell ct-text {{ 'is-winner' if loop.first }}"><span class="ct-plus">{{ icon('check', 16) }}</span>{{ c.strength(loop.index) }}</div>
+    {% endfor %}
+
+    <div class="ct-label">Watch out for</div>
+    {% for item in c.ranked %}
+      <div class="ct-cell ct-text {{ 'is-winner' if loop.first }}"><span class="ct-minus">{{ icon('alert', 16) }}</span>{{ c.drawback(loop.index) }}</div>
+    {% endfor %}
+  </div>
+</div>
+<p class="hint compare-note">{{ icon('info', 16) }} Ranked by NutriLenz's rules from the label values you confirmed; the AI ({{ c.provider }}) only explains the result. Not saved to your history.</p>
+{% endmacro %}

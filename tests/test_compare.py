@@ -1,10 +1,15 @@
 """Shelf Compare: Logic ranks 2-4 products, the AI explains the ranking in one call.
 Uses fake AI replies, so no API key is needed."""
+import io
+import time
+
 import pytest
 
 from conftest import CALORIES_MAX_200, SUGAR_MAX_10, Replies, make_ai, product, profile
+from test_web import Browser, build_app
 from nutrilenz.ai.comparison_task import ComparisonTask
 from nutrilenz.domain.comparison import Comparison
+from nutrilenz.domain.nutrients import Nutrient
 from nutrilenz.domain.profile import Profile
 from nutrilenz.domain.user import User
 from nutrilenz.errors.ai_error import AIError
@@ -142,3 +147,88 @@ class TestComparisonDomain:
                               profile(SUGAR_MAX_10))
         assert Comparison(1, twins, "s", {}, {}, "gemini").is_close_call
         assert not Comparison(1, ranked_pair(logic), "s", {}, {}, "gemini").is_close_call
+
+
+def reading(name: str) -> dict:
+    found = {"readable": True, "product_name": name, "brand": None, "category": "Cereal",
+             "nutrition": {key: None for key in Nutrient.keys()}, "ingredient_text": "Oats",
+             "marketing_claim": None, "notes": None}
+    return found
+
+
+def wait_for_batch(browser, batch_id):
+    for _ in range(500):
+        if browser.get("/api/batches/" + batch_id).get_json()["finished"]:
+            return
+        time.sleep(0.01)
+    raise AssertionError("batch did not finish")
+
+
+class TestComparePages:
+    FORM = {"include_0": "on", "p0_product_name": "Choco Puffs", "p0_ingredient_text": "Corn, sugar",
+            "p0_n_sugar_g": "18", "p0_n_calories_kcal": "230",
+            "include_1": "on", "p1_product_name": "Plain Oats", "p1_ingredient_text": "Oats",
+            "p1_n_sugar_g": "1", "p1_n_calories_kcal": "150"}
+
+    def upload_two(self, browser) -> str:
+        photos = [(io.BytesIO(b"one"), "a.png", "image/png"), (io.BytesIO(b"two"), "b.png", "image/png")]
+        response = browser.post("/upload", {"photos": photos, "mode": "compare"},
+                                content_type="multipart/form-data")
+        assert response.location.endswith("?mode=compare")
+        batch_id = response.location.split("?")[0].rsplit("/", 1)[1]
+        wait_for_batch(browser, batch_id)
+        return batch_id
+
+    def test_compare_page_needs_login_and_shows_upload(self):
+        browser = Browser(build_app())
+        assert browser.get("/compare").status_code == 302
+        browser.login()
+        html = browser.get("/compare").get_data(as_text=True)
+        assert 'name="mode" value="compare"' in html and "Which one should I buy?" in html
+
+    def test_full_flow_ranks_and_explains(self):
+        browser = Browser(build_app(Replies.gemini(reading("A")), Replies.gemini(reading("B")),
+                                    Replies.gemini(advice())))
+        browser.login()
+        batch_id = self.upload_two(browser)
+        review = browser.get(f"/batches/{batch_id}?mode=compare").get_data(as_text=True)
+        assert "Compare side by side" in review
+        response = browser.post(f"/batches/{batch_id}/compare", self.FORM)
+        html = browser.finish_job(response.location)
+        assert "Best fit for your goals" in html
+        assert html.index("Plain Oats") < html.index("Choco Puffs")
+        assert "Point 2 to check." in html and "Not saved to your history" in html
+
+    def test_one_product_is_not_enough(self):
+        browser = Browser(build_app(Replies.gemini(reading("A")), Replies.gemini(reading("B"))))
+        browser.login()
+        batch_id = self.upload_two(browser)
+        form = {key: value for key, value in self.FORM.items() if not key.startswith("include_1")}
+        response = browser.post(f"/batches/{batch_id}/compare", form)
+        assert response.status_code == 400 and "Tick 2 to 4 products" in response.get_data(as_text=True)
+
+    def test_one_photo_is_refused_at_upload(self):
+        browser = Browser(build_app())
+        browser.login()
+        response = browser.post("/upload", {"photos": (io.BytesIO(b"one"), "a.png", "image/png"),
+                                            "mode": "compare"}, content_type="multipart/form-data")
+        assert response.location.endswith("/compare")
+        assert "Choose 2 to 4 photos" in browser.get(response.location).get_data(as_text=True)
+
+    def test_page_warns_when_winner_has_a_problem(self):
+        browser = Browser(build_app(Replies.gemini(reading("A")), Replies.gemini(reading("B")),
+                                    Replies.gemini(advice())))
+        browser.login()                                   # jane avoids maltodextrin
+        batch_id = self.upload_two(browser)
+        form = dict(self.FORM, p0_ingredient_text="Corn, maltodextrin", p1_ingredient_text="Oats, maltodextrin")
+        html = browser.finish_job(browser.post(f"/batches/{batch_id}/compare", form).location)
+        assert "Highest score, but check the label" in html and "Best fit for your goals" not in html
+        assert "Contains maltodextrin" in html
+
+    def test_bad_upload_goes_back_to_compare_page(self):
+        browser = Browser(build_app())
+        browser.login()
+        response = browser.post("/upload", {"photos": (io.BytesIO(b"GIF89a"), "x.gif", "image/gif"),
+                                            "mode": "compare"}, content_type="multipart/form-data")
+        assert "/compare" in response.location
+        assert "Only JPG, PNG or WEBP" in browser.get(response.location).get_data(as_text=True)

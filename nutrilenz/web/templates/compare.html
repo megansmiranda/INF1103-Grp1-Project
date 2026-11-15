@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% from "_icons.html" import icon %}
+{% block title %}Shelf Compare{% endblock %}
+{% block content %}
+<section class="hero compare-hero">
+  <div class="hero-text">
+    <p class="hero-eyebrow">New · Shelf Compare</p>
+    <h1>Which one should I buy?</h1>
+    <p>Standing in the aisle with a few similar products? Snap their labels and NutriLenz ranks them side by side for your goals.</p>
+  </div>
+  <div class="compare-steps">
+    <div><span>1</span>Snap {{ min_items }}–{{ max_items }} labels</div>
+    <div><span>2</span>Check what the AI read</div>
+    <div><span>3</span>See the best fit</div>
+  </div>
+</section>
+
+<div class="card">
+  <div class="card-title"><span class="stat-icon amber">{{ icon('camera') }}</span>
+    <div><h2>Upload the labels</h2>
+      <p class="muted" style="margin:0">One photo per product, {{ min_items }} to {{ max_items }} products. The AI reads them at the same time.</p></div></div>
+  <form method="post" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+    {{ m.csrf() }}
+    <input type="hidden" name="mode" value="compare">
+    <label class="dropzone" data-dropzone>
+      <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple>
+      <span class="dz-icon">{{ icon('camera', 36) }}</span>
+      <span class="dz-title">Drop photos here or click to choose</span>
+      <span class="hint">JPG, PNG or WEBP · max 8 MB each</span>
+    </label>
+    <div class="previews" data-previews></div>
+    {{ m.err(errors, 'photos') }}
+    <p style="margin-top:14px"><button>Read labels {{ icon('arrow', 18) }}</button></p>
+  </form>
+  <p class="hint compare-note">{{ icon('info', 16) }} Comparisons are not saved to your history. Use Analyse if you want a full saved report for one product.</p>
+</div>
+{% endblock %}

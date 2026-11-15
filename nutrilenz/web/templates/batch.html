@@ -36,7 +36,16 @@
         {% endif %}
       </div>
     {% endfor %}
-    <p style="margin-top:16px"><button>Analyse ticked products →</button></p>
+    {% set readable = batch.jobs|selectattr('status.value', 'equalto', 'DONE')|list|length %}
+    <p class="batch-actions">
+      {% if mode == 'compare' %}
+        <button formaction="{{ url_for('compare_batch', batch_id=batch.batch_id) }}">Compare side by side →</button>
+        <button class="ghost">Analyse each one instead</button>
+      {% else %}
+        <button>Analyse ticked products →</button>
+        {% if readable >= 2 %}<button class="ghost" formaction="{{ url_for('compare_batch', batch_id=batch.batch_id) }}">Compare them side by side</button>{% endif %}
+      {% endif %}
+    </p>
   </form>
 
 {% else %}
