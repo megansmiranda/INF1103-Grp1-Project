@@ -61,7 +61,7 @@ nav.main-nav a.active { background: var(--brand-soft); color: var(--brand-dark);
 /* ---------- layout ---------- */
 main { width: 100%; max-width: 1120px; margin: 0 auto; padding: 28px 20px 40px; flex: 1; }
 footer { text-align: center; color: var(--muted); font-size: .82rem; padding: 20px; }
-.page-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;
+.page-head { display: flex; justify-content: space-between; align-items: center; gap: 16px;
   flex-wrap: wrap; margin-bottom: 20px; }
 .page-head p { color: var(--muted); margin: 0; }
 .grid { display: grid; gap: 16px; }
@@ -157,8 +157,10 @@ form.inline { display: inline; }
 .confirm-dialog[open] { animation: pop-in .16s ease-out; }
 @keyframes pop-in { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: none; } }
 .confirm-icon { display: grid; place-items: center; width: 56px; height: 56px; margin: 0 auto 14px;
-  border-radius: 16px; font-size: 1.6rem; background: var(--red-soft); }
-.confirm-dialog:has(button[value=confirm]:not(.danger)) .confirm-icon { background: var(--brand-soft); }
+  border-radius: 16px; background: var(--red-soft); color: var(--red); }
+.confirm-dialog .when-neutral, .confirm-dialog[data-tone=neutral] .when-danger { display: none; }
+.confirm-dialog[data-tone=neutral] .when-neutral { display: block; }
+.confirm-dialog[data-tone=neutral] .confirm-icon { background: var(--brand-soft); color: var(--brand-dark); }
 .confirm-dialog h2 { margin-bottom: 6px; }
 .confirm-dialog p { margin: 0 0 22px; overflow-wrap: anywhere; }
 .confirm-actions { display: flex; gap: 10px; }
@@ -527,3 +529,10 @@ body { background: radial-gradient(1200px 500px at 85% -10%, #e3f7ea 0%, transpa
 .winner-card.not-clean { border-color: #fcd34d; background: linear-gradient(135deg, #fffbeb, #fff 55%); }
 .winner-card.not-clean .winner-badge { background: #d97706; }
 .not-clean-note { background: var(--amber-soft); color: #78350f; }
+
+/* ---------- page headings with an icon ---------- */
+.page-head > .grow { flex: 1; min-width: 220px; }
+.page-head h1 { margin-bottom: 2px; }
+.stat-icon.lg { width: 52px; height: 52px; border-radius: 16px; }
+.stat-icon.orange { background: var(--accent-soft); color: #c2410c; }
+.brand-mark .icon { color: #fff; }

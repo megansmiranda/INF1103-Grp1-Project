@@ -9,8 +9,9 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+  {% from "_icons.html" import icon %}
   <header class="topbar">
-    <a class="brand" href="{{ url_for('dashboard') }}"><span class="brand-mark">🔍</span><span>Nutri<b>Lenz</b></span></a>
+    <a class="brand" href="{{ url_for('dashboard') }}"><span class="brand-mark">{{ icon('lens', 20) }}</span><span>Nutri<b>Lenz</b></span></a>
     {% if current_user %}
     {% set links = [('dashboard', 'Dashboard'), ('analyse', 'Analyse'), ('compare', 'Compare'), ('history', 'History'),
                     ('recommendations', 'Recommendations'), ('profile', 'My goals')] %}
@@ -23,7 +24,7 @@
       <span class="avatar" title="{{ current_user.username }}">{{ current_user.username[0] }}</span>
       <form method="post" action="{{ url_for('logout') }}" class="inline"
             data-confirm="You'll need to log in again to see your goals and history."
-            data-confirm-title="Log out?" data-confirm-button="Log out" data-confirm-icon="👋" data-confirm-tone="neutral">
+            data-confirm-title="Log out?" data-confirm-button="Log out" data-confirm-tone="neutral">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button class="link">Log out</button>
       </form>
@@ -32,14 +33,13 @@
   </header>
   <main>
     {% with messages = get_flashed_messages() %}
-      {% from "_icons.html" import icon %}
       {% for message in messages %}<div class="flash" role="status" data-toast>{{ icon('info', 18) }} {{ message }}</div>{% endfor %}
     {% endwith %}
     {% block content %}{% endblock %}
   </main>
   <footer>Concerns are found by NutriLenz's rules; the AI only explains them.</footer>
   <dialog class="confirm-dialog" id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-message">
-    <div class="confirm-icon" data-confirm-slot="icon">🗑️</div>
+    <div class="confirm-icon"><span class="when-danger">{{ icon('trash', 26) }}</span><span class="when-neutral">{{ icon('logout', 26) }}</span></div>
     <h2 id="confirm-title" data-confirm-slot="title">Are you sure?</h2>
     <p id="confirm-message" class="muted" data-confirm-slot="message"></p>
     <div class="confirm-actions">

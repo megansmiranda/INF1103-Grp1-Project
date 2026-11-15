@@ -131,9 +131,10 @@ class ConfirmDialog {
     this.form = form;
     this.slots.title.textContent = data.confirmTitle || "Are you sure?";
     this.slots.message.textContent = data.confirm;
-    this.slots.icon.textContent = data.confirmIcon || "🗑️";
     this.slots.button.textContent = data.confirmButton || "Confirm";
     this.slots.button.className = data.confirmTone === "neutral" ? "" : "danger";
+    // The CSS shows the trash or log-out icon to match the tone.
+    this.dialog.dataset.tone = data.confirmTone || "danger";
     this.dialog.showModal();
     this.dialog.querySelector("button[value=cancel]").focus();
   }
