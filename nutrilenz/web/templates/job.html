@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "_macros.html" as m with context %}
+{% from "_icons.html" import icon %}
 {% from "_recommendation_dietary.html" import dietary_summary, dietary_exclusions %}
 {% from "_comparison.html" import comparison_result with context %}
 {% set titles = {'recommendation': 'Recommendations', 'comparison': 'Shelf Compare'} %}
@@ -9,7 +10,7 @@
 {% block content %}
 {% if not job.finished %}
   <div class="card progress-card" data-poll-url="{{ url_for('job_status', job_id=job.job_id) }}">
-    <div class="pulse">{{ '✨' if job.kind == 'recommendation' else '🤖' }}</div>
+    <div class="pulse">{{ icon({'recommendation': 'sparkle', 'comparison': 'chart'}.get(job.kind, 'bot'), 32) }}</div>
     <h1>{{ waiting.get(job.kind, 'Analysing your label') }}</h1>
     <p class="poll-step" style="font-weight:700">{{ job.step }}…</p>
     <div class="bar"></div>
@@ -18,7 +19,7 @@
 
 {% elif job.status.value == 'FAILED' %}
   <div class="card progress-card">
-    <div class="pulse" style="background:var(--red-soft);animation:none">😕</div>
+    <div class="pulse failed">{{ icon('cross', 32) }}</div>
     <h1>That did not work</h1>
     <p>{{ error_text(job.error_code) }}</p>
     <p class="muted">No new record was saved.</p>
@@ -27,10 +28,10 @@
 
 {% elif job.kind == 'analysis' %}
   {% if not job.result.saved %}
-    <div class="warning">⚠️ The analysis finished but could not be saved: {{ error_text(job.result.error_code) }}</div>
+    <div class="warning warning-title">{{ icon('alert', 18) }} The analysis finished but could not be saved: {{ error_text(job.result.error_code) }}</div>
   {% endif %}
   {{ m.analysis_result(job.result.analysis) }}
-  <p style="margin-top:16px"><a class="button" href="{{ url_for('analyse') }}">Analyse another</a>
+  <p style="margin-top:16px"><a class="button" href="{{ url_for('analyse') }}">{{ icon('camera', 18) }} Analyse another</a>
      <a class="button ghost" href="{{ url_for('history') }}">Go to history</a></p>
 
 {% elif job.kind == 'comparison' %}

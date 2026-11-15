@@ -556,3 +556,10 @@ body { background: radial-gradient(1200px 500px at 85% -10%, #e3f7ea 0%, transpa
 .pulse .icon { color: var(--brand-dark); }
 .job-dot { display: inline-block; width: 16px; height: 16px; border-radius: 50%; flex: none; background: var(--brand); }
 .job-dot.failed { background: var(--red); }
+
+/* ---------- progress and problem pages ---------- */
+.pulse.failed, .pulse.warn { animation: none; }
+.pulse.failed { background: var(--red-soft); }
+.pulse.failed .icon { color: var(--red); }
+.pulse.warn { background: var(--amber-soft); }
+.pulse.warn .icon { color: var(--amber); }
