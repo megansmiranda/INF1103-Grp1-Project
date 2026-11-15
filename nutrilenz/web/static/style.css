@@ -254,12 +254,14 @@ form.inline { display: inline; }
 .meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 14px; }
 .tips { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
 .tips li { display: flex; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); }
-.tips li::before { content: "💡"; }
+.tips li::before { content: ""; flex: none; width: 18px; height: 18px; margin-top: 2px;
+  background: #d97706; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18h6'/%3E%3Cpath d='M10 22h4'/%3E%3Cpath d='M12 2a7 7 0 0 0-4 12.7V16h8v-1.3A7 7 0 0 0 12 2z'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18h6'/%3E%3Cpath d='M10 22h4'/%3E%3Cpath d='M12 2a7 7 0 0 0-4 12.7V16h8v-1.3A7 7 0 0 0 12 2z'/%3E%3C/svg%3E") center / contain no-repeat; }
 .suggest { margin-top: 16px; border-radius: 14px; padding: 16px; background: linear-gradient(135deg, #fff7ed, #fef3c7); border: 1px solid #fde4c4; }
 .suggest h3 { margin-bottom: 2px; }
 .suggest-list { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 8px; }
 .suggest-list li { display: flex; gap: 12px; align-items: flex-start; background: rgba(255,255,255,.75); border-radius: 10px; padding: 10px 12px; }
-.suggest-list li::before { content: "🛒"; }
+.suggest-list li::before { content: ""; flex: none; width: 18px; height: 18px; margin-top: 2px;
+  background: #c2410c; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='21' r='1'/%3E%3Ccircle cx='20' cy='21' r='1'/%3E%3Cpath d='M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='21' r='1'/%3E%3Ccircle cx='20' cy='21' r='1'/%3E%3Cpath d='M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6'/%3E%3C/svg%3E") center / contain no-repeat; }
 details { margin: 6px 0 12px; }
 summary { cursor: pointer; font-weight: 600; color: var(--muted); }
 
@@ -339,7 +341,7 @@ tbody tr:hover td { background: var(--surface-2); }
 .goal-card input:is([type=radio], [type=checkbox]):focus { border-color: var(--line); box-shadow: none; }
 .dietary-notice { display: flex; align-items: flex-start; gap: 14px; border-radius: 12px;
   padding: 16px 18px; background: var(--amber-soft); color: #665429; margin: 20px 0; }
-.dietary-notice > span { color: var(--amber); font-size: 1.25rem; }
+.dietary-notice > .icon { color: var(--amber); margin-top: 1px; }
 .dietary-notice p { margin: 0; }
 .dietary-actions { display: flex; gap: 10px; margin-top: 16px; }
 .nutrition-settings summary { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
@@ -536,3 +538,13 @@ body { background: radial-gradient(1200px 500px at 85% -10%, #e3f7ea 0%, transpa
 .stat-icon.lg { width: 52px; height: 52px; border-radius: 16px; }
 .stat-icon.orange { background: var(--accent-soft); color: #c2410c; }
 .brand-mark .icon { color: #fff; }
+
+/* ---------- result rows with line icons ---------- */
+.flag .icon { display: inline-block; }
+.gr-icon { display: grid; place-items: center; color: var(--muted); }
+.gr-icon.met { color: var(--brand); }
+.gr-icon.mismatch { color: var(--red); }
+.gr-icon.missing, .gr-icon.concern { color: var(--amber); }
+.gr-icon.checked { color: var(--blue); }
+.with-icon { display: flex; align-items: center; gap: 8px; }
+.with-icon .icon { color: #c2410c; }

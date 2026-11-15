@@ -46,7 +46,7 @@
     <a class="button ghost" href="{{ url_for('recommendations') }}">Change options</a>
   </div>
   {% if rec.is_empty() %}
-    <div class="card">{{ m.empty('🔍', 'No saved products fit these options yet. Analyse more products to grow the catalogue.') }}</div>
+    <div class="card">{{ m.empty('search', 'No saved products fit these options yet. Analyse more products to grow the catalogue.') }}</div>
   {% endif %}
   <div class="stack">
   {% for item in rec.items() %}
