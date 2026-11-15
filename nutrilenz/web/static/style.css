@@ -465,6 +465,12 @@ body { background: radial-gradient(1200px 500px at 85% -10%, #e3f7ea 0%, transpa
   .hero-score { justify-content: flex-start; }
   .flash { top: auto; bottom: 16px; right: 16px; left: 16px; max-width: none; }
 }
+/* On phones the menu gets its own row under the logo. */
+@media (max-width: 700px) {
+  nav.main-nav { flex-basis: 100%; }
+  .user-menu { margin-left: auto; }
+}
+
 @media (max-width: 700px) {
   .result-match-grid { grid-template-columns: 1fr; }
   .goal-grid, .grid.three { grid-template-columns: minmax(0, 1fr); }
