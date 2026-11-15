@@ -76,6 +76,8 @@ footer { text-align: center; color: var(--muted); font-size: .82rem; padding: 20
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
   padding: 22px; box-shadow: var(--shadow); }
 .card + .card { margin-top: 16px; }
+/* Cards placed by a grid get their spacing from the grid gap, not the rule above. */
+.grid > .card, .stat-row > .card, .dash-grid > .card { margin-top: 0; }
 .card.hover { transition: transform .15s, box-shadow .15s; }
 .card.hover:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
 .card.danger-zone { border-color: #fecaca; background: #fffafa; }
