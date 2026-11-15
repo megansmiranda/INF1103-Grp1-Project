@@ -20,6 +20,7 @@
 </form>
 <div class="card">
   {% if records %}
+  <div class="table-scroll">
   <table>
     <thead><tr><th>Score</th><th>Product</th><th>Flags</th><th>Date</th><th></th></tr></thead>
     <tbody>
@@ -37,6 +38,7 @@
     {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}{{ m.empty('search', 'No analyses match.') }}{% endif %}
 </div>
 {% endblock %}
