@@ -1,12 +1,23 @@
 """Shelf Compare: Logic ranks 2-4 products, the AI explains the ranking in one call.
 Uses fake AI replies, so no API key is needed."""
+import pytest
+
 from conftest import CALORIES_MAX_200, SUGAR_MAX_10, product, profile
+from nutrilenz.ai.comparison_task import ComparisonTask
 from nutrilenz.domain.profile import Profile
 
 LOW_SUGAR = {"product_name": "Plain Oats", "nutrition": {"sugar_g": 1.0, "calories_kcal": 150.0},
              "ingredient_text": "Whole grain oats", "marketing_claim": None}
 HIGH_SUGAR = {"product_name": "Choco Puffs", "nutrition": {"sugar_g": 18.0, "calories_kcal": 230.0},
               "ingredient_text": "Corn, sugar, cocoa", "marketing_claim": None}
+
+
+def advice(count=2, **changes) -> dict:
+    answer = {"summary": "Plain Oats fits best: far less sugar and fewer calories.",
+              "notes": [{"item": n, "strength": f"Point {n} in favour.", "drawback": f"Point {n} to check."}
+                        for n in range(1, count + 1)]}
+    answer.update(changes)
+    return answer
 
 
 def ranked_pair(logic):
@@ -42,3 +53,37 @@ class TestLogicRanking:
                                                                      ingredient_text="Oats, palm oil"))],
                                profile(SUGAR_MAX_10, avoid=["palm oil"]))
         assert [item.product.name for item in ranked] == ["Plain Oats", "Palm Oats"]
+
+
+class TestComparisonTask:
+    def test_request_sends_products_in_ranked_order(self, logic):
+        request = ComparisonTask(profile(SUGAR_MAX_10), ranked_pair(logic)).build_request()
+        assert request.user_content.index('"item": 1') < request.user_content.index('"item": 2')
+        assert request.user_content.index("Plain Oats") < request.user_content.index("Choco Puffs")
+        assert "app_score" in request.user_content and "Never change this order" in request.system_rules
+
+    def test_valid_reply(self, logic):
+        result = ComparisonTask(profile(SUGAR_MAX_10), ranked_pair(logic)).parse(advice())
+        assert result.summary.startswith("Plain Oats") and result.drawback(2) == "Point 2 to check."
+
+    @pytest.mark.parametrize("notes", [
+        [{"item": 1, "strength": "a", "drawback": "b"}],                                          # one missing
+        [{"item": 1, "strength": "a", "drawback": "b"}, {"item": 1, "strength": "a", "drawback": "b"}],
+        [{"item": 1, "strength": "a", "drawback": "b"}, {"item": 3, "strength": "a", "drawback": "b"}],
+        [{"item": 1, "strength": "a", "drawback": "b"}, {"item": True, "strength": "a", "drawback": "b"}],
+        [{"item": 1, "strength": "a"}, {"item": 2, "strength": "a", "drawback": "b"}],
+    ])
+    def test_bad_notes_are_rejected(self, logic, notes):
+        with pytest.raises(ValueError):
+            ComparisonTask(profile(SUGAR_MAX_10), ranked_pair(logic)).parse(advice(notes=notes))
+
+    def test_unsafe_wording_and_extra_fields_are_rejected(self, logic):
+        task = ComparisonTask(profile(SUGAR_MAX_10), ranked_pair(logic))
+        with pytest.raises(ValueError):
+            task.parse(advice(summary="Plain Oats is safe for you."))
+        with pytest.raises(ValueError):
+            task.parse(dict(advice(), winner=2))
+
+    def test_needs_two_products(self, logic):
+        with pytest.raises(ValueError):
+            ComparisonTask(profile(SUGAR_MAX_10), ranked_pair(logic)[:1])
