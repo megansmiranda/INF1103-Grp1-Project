@@ -80,14 +80,7 @@ class AnalysisPages(PageController):
 
     def analyse_batch(self, batch_id: str):
         batch = self._batch_or_404(batch_id)
-        products, errors = [], {}
-        for index, job in enumerate(batch.jobs):
-            if job.status is not JobStatus.DONE or request.form.get(f"include_{index}") != "on":
-                continue
-            try:
-                products.append(self._ctx.forms.product(request.form, prefix=f"p{index}_"))
-            except ValidationError as error:
-                errors.update(error.field_errors)
+        products, errors = self._ticked_products(batch, request.form)
         if not products and not errors:
             errors["form"] = "Tick at least one product to analyse."
         if errors:
