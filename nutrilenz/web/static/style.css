@@ -563,3 +563,11 @@ body { background: radial-gradient(1200px 500px at 85% -10%, #e3f7ea 0%, transpa
 .pulse.failed .icon { color: var(--red); }
 .pulse.warn { background: var(--amber-soft); }
 .pulse.warn .icon { color: var(--amber); }
+
+/* ---------- history and saved analysis ---------- */
+.icon-button { padding: 8px; border-radius: 10px; background: transparent; color: var(--muted); box-shadow: none; }
+.icon-button:hover { background: var(--red-soft); color: var(--red); }
+.back-link { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; text-decoration: none; }
+.back-link:hover { text-decoration: underline; }
+button.ghost.danger-text { color: var(--red); }
+button.ghost.danger-text:hover { background: var(--red-soft); border-color: #fecaca; }
