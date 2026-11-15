@@ -10,6 +10,7 @@ from .data.seeder import DemoDataSeeder
 from .errors.data_error import DataError
 from .logic.logic_manager import LogicManager
 from .services.analysis_service import AnalysisService
+from .services.comparison_service import ComparisonService
 from .services.job_manager import JobManager
 from .services.recommendation_service import RecommendationService
 from .web.web_context import WebContext
@@ -30,7 +31,8 @@ class NutriLenzApp:
         context = WebContext(self._data,
                              AnalysisService(self._ai, self._logic, self._data),
                              RecommendationService(self._ai, self._logic, self._data),
-                             self._jobs)
+                             self._jobs,
+                             ComparisonService(self._ai, self._logic))
         self._io = WebIOManager(context, config.secret_key)
 
     @classmethod
