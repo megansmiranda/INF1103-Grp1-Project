@@ -1,15 +1,18 @@
 {% extends "base.html" %}
 {% import "_macros.html" as m with context %}
+{% from "_icons.html" import icon %}
 {% block title %}Log in{% endblock %}
 {% block content %}
 <div class="auth">
   <div class="auth-art">
+    <p class="hero-eyebrow">Food label checker</p>
     <h1>Know what you're really eating.</h1>
     <p>Snap or type a food label. NutriLenz explains the ingredients, checks the claims and tells you how it fits your goals.</p>
     <ul>
-      <li><span>📷</span> Read labels straight from a photo</li>
-      <li><span>🎯</span> Track several goals at once</li>
-      <li><span>🛒</span> Get better picks you can buy in Singapore</li>
+      <li><span>{{ icon('camera', 18) }}</span> Read labels straight from a photo</li>
+      <li><span>{{ icon('target', 18) }}</span> Track several goals at once</li>
+      <li><span>{{ icon('chart', 18) }}</span> Compare products side by side on the shelf</li>
+      <li><span>{{ icon('cart', 18) }}</span> Get better picks you can buy in Singapore</li>
     </ul>
   </div>
   <div class="auth-form">

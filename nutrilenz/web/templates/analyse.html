@@ -1,35 +1,38 @@
 {% extends "base.html" %}
 {% import "_macros.html" as m with context %}
+{% from "_icons.html" import icon %}
 {% block title %}Analyse{% endblock %}
 {% block content %}
 <div class="page-head">
-  <div><h1>Analyse a product</h1><p>Upload photos of the label, or type it in yourself.</p></div>
+  <span class="stat-icon lg green">{{ icon('camera', 26) }}</span>
+  <div class="grow"><h1>Analyse a product</h1><p>Upload photos of the label, or type it in yourself.</p></div>
+  <a class="button ghost" href="{{ url_for('compare') }}">{{ icon('chart', 18) }} Compare products instead</a>
 </div>
 
 <div class="card">
-  <div class="card-title"><span class="icon-bubble orange">📷</span>
+  <div class="card-title"><span class="stat-icon orange">{{ icon('camera') }}</span>
     <div><h2>Upload label photos</h2><p class="muted" style="margin:0">Up to 5 photos at once. The AI reads them in parallel and you check the values before anything is analysed.</p></div></div>
   <form method="post" action="{{ url_for('upload') }}" enctype="multipart/form-data">
     {{ m.csrf() }}
     <label class="dropzone" data-dropzone>
       <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple>
-      <span class="dz-icon">🖼️</span>
+      <span class="dz-icon">{{ icon('camera', 36) }}</span>
       <span class="dz-title">Drop photos here or click to choose</span>
       <span class="hint">JPG, PNG or WEBP · max 8 MB each</span>
     </label>
     <div class="previews" data-previews></div>
     {{ m.err(errors, 'photos') }}
-    <p style="margin-top:14px"><button>Read photos →</button></p>
+    <p style="margin-top:14px"><button>Read photos {{ icon('arrow', 18) }}</button></p>
   </form>
 </div>
 
 <div class="divider">or type it in</div>
 
 <div class="card">
-  <div class="card-title"><span class="icon-bubble">⌨️</span><h2>Enter the label</h2></div>
+  <div class="card-title"><span class="stat-icon blue">{{ icon('keyboard') }}</span><h2>Enter the label</h2></div>
   {% if warnings %}
   <div class="warning">
-    <b>⚠️ Please check before the AI is used</b>
+    <b class="warning-title">{{ icon('alert', 18) }} Please check before the AI is used</b>
     <ul>{% for w in warnings %}<li>{{ w }}</li>{% endfor %}</ul>
   </div>
   {% endif %}
@@ -39,7 +42,7 @@
     {% if warnings %}
       <label class="choice" style="margin-bottom:14px"><input type="checkbox" name="confirmed" value="yes"> The values are correct, analyse anyway <span class="tick">✓</span></label>
     {% endif %}
-    <button>Analyse with AI →</button>
+    <button>Analyse with AI {{ icon('arrow', 18) }}</button>
   </form>
 </div>
 {% endblock %}

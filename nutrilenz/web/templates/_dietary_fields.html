@@ -1,3 +1,4 @@
+{% from "_icons.html" import icon %}
 {% set diet_cards = [('none', '🍽️', 'No diet', 'Just use the checks you tick below.'),
                      ('vegetarian', '🥬', 'Vegetarian – dairy allowed', 'Flags meat, fish and animal-derived ingredients.'),
                      ('vegetarian_no_dairy', '🌱', 'Vegetarian – no dairy', 'Also flags milk and dairy ingredients.'),
@@ -56,6 +57,6 @@
       <input name="avoid_ingredients" placeholder="e.g. peanuts, maltodextrin" value="{{ values.get('avoid_ingredients', '') }}">
       {% if errors.get('avoid_ingredients') %}<p class="error">{{ errors['avoid_ingredients'] }}</p>{% endif %}
     </label>
-    <div class="dietary-notice"><span aria-hidden="true">⚠</span><p><b>These checks can miss things.</b> NutriLenz only searches the ingredient words you enter or confirm. It cannot see “may contain” warnings, processing methods or certifications. If you have an allergy, always read the packaging.</p></div>
+    <div class="dietary-notice">{{ icon('alert', 22) }}<p><b>These checks can miss things.</b> NutriLenz only searches the ingredient words you enter or confirm. It cannot see “may contain” warnings, processing methods or certifications. If you have an allergy, always read the packaging.</p></div>
   </section>
 {% endmacro %}
