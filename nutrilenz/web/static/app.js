@@ -76,6 +76,14 @@ document.querySelectorAll("[data-batch-url]").forEach((box) => {
   }).start();
 });
 
+// Hides each message toast a few seconds after the page loads.
+document.querySelectorAll("[data-toast]").forEach((toast) => {
+  setTimeout(() => {
+    toast.classList.add("hide");
+    setTimeout(() => toast.remove(), 400);
+  }, 4000);
+});
+
 document.querySelectorAll("[data-dropzone]").forEach((zone) => {
   new Dropzone(zone, zone.parentElement.querySelector("[data-previews]")).start();
 });
