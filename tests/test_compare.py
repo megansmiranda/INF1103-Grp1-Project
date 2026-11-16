@@ -98,6 +98,23 @@ class TestComparisonTask:
         with pytest.raises(ValueError):
             ComparisonTask(profile(SUGAR_MAX_10), ranked_pair(logic)[:1])
 
+    def test_request_explains_why_a_lower_score_can_win(self, logic):
+        dairy_low_sugar = product(product_name="Milk Oats", ingredient_text="Oats, milk powder",
+                                  nutrition={"sugar_g": 1.0, "calories_kcal": 150.0})
+        user_profile = Profile([SUGAR_MAX_10], [], ["dairy"])
+        ranked = logic.compare([dairy_low_sugar, product(**HIGH_SUGAR)], user_profile)
+        request = ComparisonTask(user_profile, ranked).build_request()
+        assert '"has_concern": false' in request.user_content
+        assert '"has_concern": true' in request.user_content
+        assert '"status": "MISMATCH"' in request.user_content
+        assert "ranks below every product without one" in request.system_rules
+
+    def test_summary_must_name_the_ranked_winner(self, logic):
+        task = ComparisonTask(profile(SUGAR_MAX_10), ranked_pair(logic))
+        with pytest.raises(ValueError, match="item 1"):
+            task.parse(advice(summary="Choco Puffs is the best fit for your goals."))
+        assert task.parse(advice(summary="plain oats wins on sugar.")).summary == "plain oats wins on sugar."
+
 
 class TestComparisonService:
     def user(self) -> User:
