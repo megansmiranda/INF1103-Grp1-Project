@@ -12,7 +12,7 @@
   <header class="topbar">
     <a class="brand" href="{{ url_for('dashboard') }}"><span class="brand-mark">🔍</span><span>Nutri<b>Lenz</b></span></a>
     {% if current_user %}
-    {% set links = [('dashboard', 'Dashboard'), ('analyse', 'Analyse'), ('history', 'History'),
+    {% set links = [('dashboard', 'Dashboard'), ('analyse', 'Analyse'), ('compare', 'Compare'), ('history', 'History'),
                     ('recommendations', 'Recommendations'), ('profile', 'My goals')] %}
     <nav class="main-nav">
       {% for endpoint, label in links %}

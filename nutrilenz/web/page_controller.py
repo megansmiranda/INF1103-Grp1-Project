@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
 from flask import Flask, abort, g
 
+from ..domain.product import Product
 from ..domain.user import User
 from ..errors.validation_error import ValidationError
 from ..services.batch import Batch
 from ..services.job import Job
+from ..services.job_status import JobStatus
 from .web_context import WebContext
 
 
@@ -40,3 +42,15 @@ class PageController(ABC):
         if batch is None:
             abort(404)
         return batch
+
+    def _ticked_products(self, batch: Batch, form) -> tuple[list[Product], dict[str, str]]:
+        """Products from the label-check form for every photo the user kept ticked."""
+        products, errors = [], {}
+        for index, job in enumerate(batch.jobs):
+            if job.status is not JobStatus.DONE or form.get(f"include_{index}") != "on":
+                continue
+            try:
+                products.append(self._ctx.forms.product(form, prefix=f"p{index}_"))
+            except ValidationError as error:
+                errors.update(error.field_errors)
+        return products, errors

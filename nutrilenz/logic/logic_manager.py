@@ -89,6 +89,27 @@ class LogicManager:
                     "serving, not per 100 g.")
         return warnings
 
+    def compare(self, products: list[Product], profile: Profile) -> list[ScoredProduct]:
+        """Ranks products picked up together on a shelf, best fit first.
+
+        Nothing is filtered out. A product with a possible dietary concern or an avoided
+        ingredient always ranks below a clean one, then the goal score decides.
+        Equal products keep their order.
+        """
+        avoid = list(profile.avoid_ingredients)
+        scored = []
+        for product in products:
+            report = self.check_dietary(product, profile)
+            scored.append(ScoredProduct(product, self.score(product, profile),
+                                        self.evaluate_goals(product, profile), report))
+        scored.sort(key=lambda item: (not self.is_clean(item, avoid), -item.score))
+        return scored
+
+    @staticmethod
+    def is_clean(item: ScoredProduct, avoid: list[str]) -> bool:
+        """No possible dietary concern and nothing from the avoid list."""
+        return not item.dietary_report.has_concern and not item.product.ingredients_found(avoid)
+
     def rank(self, products: list[Product], profile: Profile, options: RecommendationOptions,
              limit: int = 5) -> list[ScoredProduct]:
         return self.recommendation_candidates(products, profile, options, limit)[0]

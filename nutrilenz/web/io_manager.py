@@ -11,6 +11,7 @@ from ..errors.error_messages import ErrorMessages
 from ..errors.nutrilenz_error import NutriLenzError
 from .account_pages import AccountPages
 from .analysis_pages import AnalysisPages
+from .compare_pages import ComparePages
 from .history_pages import HistoryPages
 from .page_controller import PageController
 from .recommendation_pages import RecommendationPages
@@ -38,7 +39,7 @@ class WebIOManager:
                                 SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
         # The page groups are created here and belong to this manager
         self._controllers: list[PageController] = [
-            AccountPages(context), AnalysisPages(context),
+            AccountPages(context), AnalysisPages(context), ComparePages(context),
             HistoryPages(context), RecommendationPages(context)]
         self._public = set(self.STATIC_ENDPOINTS)
         for controller in self._controllers:

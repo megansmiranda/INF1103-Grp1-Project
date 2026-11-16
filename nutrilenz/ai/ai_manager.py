@@ -21,6 +21,7 @@ from .ai_task import AITask
 from .label_analysis_task import LabelAnalysisTask
 from .label_extraction_task import LabelExtractionTask
 from .recommendation_task import RecommendationTask
+from .comparison_task import ComparisonTask
 from .json_reply_parser import JsonReplyParser
 
 logger = logging.getLogger("nutrilenz.ai")
@@ -102,3 +103,7 @@ class AIManager:
     def advise(self, profile: Profile, options: RecommendationOptions,
                candidates: list[ScoredProduct]) -> RecommendationAdvice:
         return self.run(RecommendationTask(profile, options, candidates)).value
+
+    def compare(self, profile: Profile, ranked: list[ScoredProduct]) -> AIResult:
+        """value is a ComparisonAdvice."""
+        return self.run(ComparisonTask(profile, ranked))
