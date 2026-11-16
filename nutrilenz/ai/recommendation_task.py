@@ -4,7 +4,8 @@ from ..domain.profile import Profile
 from .ai_request import AIRequest
 from .recommendation_advice import RecommendationAdvice
 from .ai_task import AITask
-from .prompt_text import SHARED_RULES, DIETARY_RULES, SINGAPORE_PRODUCT_RULES, PRODUCT_SUGGESTION_SCHEMA
+from .prompt_text import (SHARED_RULES, DIETARY_RULES, GOAL_RULES, SINGAPORE_PRODUCT_RULES,
+                          PRODUCT_SUGGESTION_SCHEMA)
 
 
 class RecommendationTask(AITask):
@@ -14,8 +15,7 @@ class RecommendationTask(AITask):
     RULES = """You help a user in Singapore choose packaged foods.
 
 Rules:
-""" + SHARED_RULES + DIETARY_RULES + """
-- picks may ONLY use products from the candidates list, by their product_id.
+""" + SHARED_RULES + DIETARY_RULES + GOAL_RULES + """- picks may ONLY use products from the candidates list, by their product_id.
 - Candidates are already filtered and ranked by Python. They have no matched avoid-list
   ingredients or possible dietary concerns. Some have unknown ingredients: do not
   claim these passed dietary checks. Pick the ones that match the focus best.
@@ -55,6 +55,7 @@ Return exactly these keys:
                 "per_serving": {n.key: v for n, v in product.nutrition.supplied().items()},
                 "ingredients": product.ingredient_text,
                 "app_score": scored.score,
+                "goal_results": self._goal_facts(self._profile, product),
                 "dietary_results": self._dietary_facts(scored.dietary_report),
             })
         payload = {"goals": self._goal_phrase(self._profile),

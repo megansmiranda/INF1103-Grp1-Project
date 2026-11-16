@@ -256,6 +256,14 @@ class TestExtractionAndRecommendationTasks:
             with pytest.raises(ValueError):
                 self.advise({**good, "picks": [{"product_id": bad_id, "reason": "x"}]})
 
+    def test_recommendation_request_sends_goal_status_not_targets(self):
+        request = RecommendationTask(profile(PROTEIN_MIN_15), RecommendationOptions(),
+                                     self.shortlist()).build_request()
+        assert '"goal": "get more: protein"' in request.user_content
+        assert '"status": "MISMATCH"' in request.user_content        # 6 g against a 15 g minimum
+        assert "15" not in request.user_content.split("candidates")[0]
+        assert "Never call a goal met" in request.system_rules
+
     def test_recommendation_must_pick_one_and_not_repeat_candidates(self):
         with pytest.raises(ValueError, match="at least one"):
             self.advise({"picks": [], "tips": ["t"], "suggested_products": []})

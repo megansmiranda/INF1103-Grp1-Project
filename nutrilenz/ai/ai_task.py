@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 
 from ..domain.dietary_keywords import DietaryKeywords
 from ..domain.dietary_report import DietaryReport
+from ..domain.product import Product
 from ..domain.profile import Profile
 from .ai_request import AIRequest
 from .schema_checker import SchemaChecker
@@ -48,6 +49,13 @@ class AITask(ABC):
             word = "keep low" if goal.direction == "MAX" else "get more"
             phrases.append(word + ": " + goal.nutrient.label.lower())
         return phrases
+
+    @classmethod
+    def _goal_facts(cls, profile: Profile, product: Product) -> list[dict]:
+        """Logic's MET / MISMATCH / MISSING result for each goal, without the target numbers."""
+        phrases = cls._goal_phrase(profile)
+        return [{"goal": phrase, "status": goal.evaluate(product.nutrition).value}
+                for phrase, goal in zip(phrases, profile.goals)]
 
     @staticmethod
     def _dietary_preferences(profile: Profile) -> list[dict]:
