@@ -96,6 +96,8 @@ classDiagram
     Recommendation o-- "0..*" ScoredProduct
     ScoredProduct --> Product
     class RecommendationOptions { focus category }
+    class Comparison { +winner +winner_is_clean +is_close_call +goal_rows() +strength(rank) +drawback(rank) }
+    Comparison o-- "2..4" ScoredProduct
 
     %% ---------- AI Manager ----------
     class AIProvider {
@@ -119,11 +121,15 @@ classDiagram
     class LabelAnalysisTask
     class LabelExtractionTask
     class RecommendationTask
+    class ComparisonTask
     AITask <|.. LabelAnalysisTask
     AITask <|.. LabelExtractionTask
     AITask <|.. RecommendationTask
+    AITask <|.. ComparisonTask
+    class ComparisonAdvice { summary +strength(rank) +drawback(rank) }
+    ComparisonTask ..> ComparisonAdvice : creates
     AITask *-- SchemaChecker
-    class AIManager { +run(task) AIResult +analyse_label() +read_label_image() +advise() }
+    class AIManager { +run(task) AIResult +analyse_label() +read_label_image() +advise() +compare() }
     AIManager *-- "1..*" AIProvider
     AIManager *-- JsonReplyParser
     AIManager ..> AITask : runs
@@ -144,7 +150,7 @@ classDiagram
     Rule <|-- ManualReviewRule
     Rule <|-- DietaryReviewRule
     Rule <|-- GoodMatchRule
-    class LogicManager { +evaluate() Evaluation +check_dietary() DietaryReport +score() +rank() +check_unusual_numbers() }
+    class LogicManager { +evaluate() Evaluation +check_dietary() DietaryReport +score() +rank() +compare() +check_unusual_numbers() }
     LogicManager *-- "1..*" Rule
     class DietaryChecker { +check(text, check) DietaryResult +evaluate(text, checks) DietaryReport }
     LogicManager *-- DietaryChecker
@@ -181,6 +187,10 @@ classDiagram
     RecommendationService --> AIManager
     RecommendationService --> LogicManager
     RecommendationService --> DataManager
+    class ComparisonService { +compare(user, products, job) Comparison }
+    ComparisonService --> AIManager
+    ComparisonService --> LogicManager
+    ComparisonService ..> Comparison : creates
     class JobObserver { <<interface>> +on_job_update(job)* }
     class JobLogger
     JobObserver <|.. JobLogger
@@ -197,12 +207,14 @@ classDiagram
     class AnalysisPages
     class HistoryPages
     class RecommendationPages
+    class ComparePages
     PageController <|-- AccountPages
     PageController <|-- AnalysisPages
     PageController <|-- HistoryPages
     PageController <|-- RecommendationPages
+    PageController <|-- ComparePages
     class WebIOManager { +run() }
-    WebIOManager *-- "4" PageController
+    WebIOManager *-- "5" PageController
     WebIOManager *-- CsrfGuard
     class DietaryPresenter { +ingredient_segments(report) }
     DietaryPresenter ..> DietaryReport : shows
@@ -210,6 +222,7 @@ classDiagram
     WebContext *-- FormParser
     WebContext --> AnalysisService
     WebContext --> RecommendationService
+    WebContext --> ComparisonService
     WebContext --> JobManager
 
     class NutriLenzApp { +from_environment() +run() }
@@ -223,11 +236,11 @@ classDiagram
 
 | Concept | Where (file) | Why it fits the domain |
 |---|---|---|
-| **Classes and objects** | 50+ classes; `NutriLenzApp` builds one object per manager and service (`nutrilenz/app.py`) | Every request runs through real objects: `User`, `Product`, `Analysis`, `Job`... |
+| **Classes and objects** | 102 classes, one per file; `NutriLenzApp` builds one object per manager and service (`nutrilenz/app.py`) | Every request runs through real objects: `User`, `Product`, `Analysis`, `Job`... |
 | **Encapsulation** | `_private` attributes with read-only `@property` everywhere. Name-mangled `__password_hash` (`domain/user.py`) and `__api_key` (`ai/ai_provider.py`) | The password hash and API key can't be read from outside. `Profile.goals` returns a tuple so the list can't be changed without validation. |
 | **Abstract classes** | `Goal`, `AIProvider`, `Rule`, `PageController`, `DataStore` | Each defines shared behaviour plus abstract steps. E.g. `Goal.evaluate()` is shared; `_is_met()` is abstract. |
-| **Inheritance** | `LimitGoal`/`MinimumGoal` ← `Goal`; `GeminiProvider`/`GroqProvider` ← `AIProvider`; 5 rules ← `Rule`; dietary checks ← `DietaryCheck`; 4 page groups ← `PageController`; 2 stores ← `DataStore` | Subclasses only change what is different (e.g. Groq's request body). |
-| **Interfaces** | `AITask`, `UserRepository`/`ProductRepository`/`AnalysisRepository`, `JobObserver` (pure ABCs, no state) | Contracts that several classes implement: three AI tasks, two stores, observers. |
+| **Inheritance** | `LimitGoal`/`MinimumGoal` ← `Goal`; `GeminiProvider`/`GroqProvider` ← `AIProvider`; 5 rules ← `Rule`; dietary checks ← `DietaryCheck`; 5 page groups ← `PageController`; 2 stores ← `DataStore` | Subclasses only change what is different (e.g. Groq's request body). |
+| **Interfaces** | `AITask`, `UserRepository`/`ProductRepository`/`AnalysisRepository`, `JobObserver` (pure ABCs, no state) | Contracts that several classes implement: four AI tasks, two stores, observers. |
 | **Polymorphism** | `AIManager.run()` calls `provider.generate()` and `task.parse()` with no type checks. `LogicManager.evaluate()` loops `rule.applies()`. `goal.evaluate()` works for MAX and MIN goals. | New providers, tasks, rules and goals work without changing the calling code. |
 | **Association** | `Analysis` → `Product`; services → managers (`AnalysisService` is given the managers, doesn't own them); `PageController` → `WebContext` | Objects work together but neither owns the other. A product exists without any analysis. |
 | **Aggregation** | `Recommendation` o-- `ScoredProduct`/`Product`; `Batch` o-- `Job`; `DataManager` o-- `DataStore` (passed in from outside) | The parts exist on their own: products stay in the catalogue, jobs stay in the `JobManager`, the store is created outside the manager. |
@@ -249,7 +262,7 @@ classDiagram
 - New nutrient: one line in the `Nutrient` enum. Forms, prompts, DB and validation pick it up automatically.
 - New goal type: a `Goal` subclass plus one `GoalFactory._TYPES` entry.
 - New flag rule: a `Rule` subclass. `test_new_rule_can_be_added_without_changing_logic_manager` proves this.
-- New AI feature: a new `AITask`. Photo reading and recommendations were added without editing `AIManager.run()`.
+- New AI feature: a new `AITask`. Photo reading, recommendations and Shelf Compare were added without editing `AIManager.run()`.
 - New AI provider: an `AIProvider` subclass.
 
 **LSP – substitution.**
@@ -282,12 +295,18 @@ Also used:
 | **Label photo reader** (approved by lecturer) | Typing labels is slow | Analyse → Upload photos → check values → Analyse | `LabelExtractionTask`, `LabelImage`, `LabelReading`, `AnalysisService.read_label`, `AnalysisPages` | `test_ai.py::TestExtractionAndRecommendationTasks`, `test_web.py::test_photo_upload_then_review` |
 | **Recommendations from fixed options** (tick one or more focuses and categories; several focuses are combined into one ranking) + **Singapore product suggestions** | "What should I buy instead?" without free-text prompts | Recommendations page; suggestions also on every analysis | `RecommendationOptions`, `LogicManager.rank`, `RecommendationTask`, `RecommendationService`, `RecommendationCache`, `ProductSuggestion` | `test_logic.py::TestRanking`, `test_services.py::TestRecommendationService`, `test_web.py::test_several_options_can_be_ticked` |
 | **Dietary restrictions** (vegetarian, no-dairy vegetarian, vegan, halal-friendly, allergens) | Users need to know if a product fits their diet, not only their nutrient goals | Sign up / My goals; results on the analysis page | `DietaryCheck` and its subclasses, `DietaryCheckFactory`, `DietaryKeywords`, `DietaryReport`, `DietaryChecker`, `DietaryReviewRule`, `DietaryPresenter` | `test_dietary.py`, `test_dietary_followup.py` |
+| **Shelf Compare** (2–4 similar products side by side) | Shoppers standing in the aisle need to choose between a few similar products, not analyse each one separately | Compare in the menu, or "Compare on the shelf" on the dashboard → upload 2–4 label photos → check values → Compare side by side. Also "Compare them side by side" on the label check page after a normal upload. Results are not saved to history. | `LogicManager.compare`, `ComparisonTask`, `ComparisonAdvice`, `Comparison`, `ComparisonService`, `ComparePages` | `test_compare.py` (ranking, AI reply checks, service, domain, web flow) |
 | Accounts with login | History and goals per person | Sign up / Log in | `User`, `PasswordHasher`, `LoginSession`, `CsrfGuard`, `AccountPages` | `test_web.py::TestAccounts`, `test_domain.py::TestPasswords` |
 | History search/filter + dashboard summary | Find past results | History / Dashboard | `AnalysisRepository.list_analyses`, `HistoryPages` | `test_data.py::TestAnalyses`, `test_web.py::TestHistoryPages` |
 | **Advanced: MySQL database (11.3)** | Data shared by accounts, full CRUD | automatic | `MySQLDataStore`, `schema.sql`, `DataManager` | MySQL contract tests (CI service) |
 | **Advanced: GUI (11.2)** | Web pages instead of a terminal | browser | `WebIOManager`, controllers, templates | `test_web.py` |
 | **Advanced: Threading (11.4)** | AI calls take 5–30 s and would freeze the page; several photos should not wait for each other | automatic (progress page) | `JobManager` (thread pool), `Job`, `Batch`, `JobObserver` | `test_services.py::TestJobs` (a barrier proves the jobs run at the same time) |
 | **Advanced: CD (11.1)** | Every main build is deployable | GitHub Actions | `publish-image` job | runs only after all CI jobs pass |
+
+Shelf Compare ranking rule: a product with a possible dietary concern or an avoid-list
+ingredient always ranks below a clean product, even with better numbers. Among the rest,
+the goal score decides. If every product has a problem, the page says the winner only has
+the highest score and asks the user to check the label.
 
 Domain-rule change to document (needs lecturer approval):
 - With several goals, GOAL_MISMATCH means **any** goal is missed.
@@ -307,6 +326,8 @@ Typed label ─► FormParser ─► LogicManager.check_unusual_numbers ─► c
           ─► DataManager.save_analysis (product reused, record + profile snapshot)
      ─► result page (polls /api/jobs/<id>) ─► History / Dashboard
 Options ─► LogicManager.rank(catalogue) ─► AIManager(RecommendationTask) ─► cache ─► page
+2–4 photos ─► review form ─► JobManager ─► ComparisonService:
+          LogicManager.compare (clean products first, then score) ─► AIManager(ComparisonTask) ─► side-by-side page (not saved)
 ```
 
 ## 7. Exception-handling matrix
@@ -320,6 +341,8 @@ Options ─► LogicManager.rank(catalogue) ─► AIManager(RecommendationTask)
 | No internet / timeout (30 s) | `HttpClient` | `API_CONNECTION_ERROR`, retry, backup | "Could not reach the AI service" |
 | Not JSON / wrong fields / bad values | `JsonReplyParser`, `AITask.parse` | `ValueError` → retry with the reason → backup | only if all attempts fail |
 | AI picks a product not in the shortlist | `RecommendationTask.parse` | rejected and retried | never shown |
+| AI comparison skips an item, repeats one or adds a winner field | `ComparisonTask.parse` | rejected and retried; the order always comes from `LogicManager.compare` | never shown |
+| Fewer than 2 or more than 4 products to compare | `AnalysisPages.upload`, `ComparePages.compare_batch`, `ComparisonService` | refused before any AI call | "Choose 2 to 4 photos" / "Tick 2 to 4 products" |
 | Photo is not a label | `AnalysisService.read_label` | `UNREADABLE_IMAGE` | "try a clearer photo or type it in" |
 | Wrong file type / too big | `LabelImage`, Flask 413 | rejected before any AI call | form error |
 | Invalid form input | `FormParser` | `ValidationError` with every field | form re-shown with messages |

@@ -27,6 +27,8 @@ See [docs/DESIGN.md](docs/DESIGN.md) for the UML and design discussion. The sche
   score and counts for the four original flags; no separate DIETARY_REVIEW summary.
 - Recommendations from selected focuses/categories, deterministic catalogue ranking,
   and cached AI advice.
+- Shelf Compare: photograph 2-4 similar products, check the values, then see them ranked
+  side by side for your goals with one AI explanation. Comparisons are not saved.
 - Flask GUI, MySQL persistence, background threading and GitHub Actions publishing.
 
 Dietary results are ingredient keyword checks. NO_MATCH does not establish safety,
@@ -86,8 +88,8 @@ changes on exit. For persistence outside Compose, provision MySQL and set
 
 | Responsibility | Manager | Main supporting classes |
 |---|---|---|
-| IO: Flask pages, forms and presentation | `WebIOManager` | `PageController`, `AccountPages`, `AnalysisPages`, `HistoryPages`, `RecommendationPages`, `FormParser`, `LoginSession`, `CsrfGuard`, `DietaryPresenter` |
-| AI: prompts, providers, parsing and validation | `AIManager` | `AIProvider`, `GeminiProvider`, `GroqProvider`, `HttpClient`, `AITask`, `LabelAnalysisTask`, `LabelExtractionTask`, `RecommendationTask`, `JsonReplyParser`, `SchemaChecker` |
+| IO: Flask pages, forms and presentation | `WebIOManager` | `PageController`, `AccountPages`, `AnalysisPages`, `HistoryPages`, `RecommendationPages`, `ComparePages`, `FormParser`, `LoginSession`, `CsrfGuard`, `DietaryPresenter` |
+| AI: prompts, providers, parsing and validation | `AIManager` | `AIProvider`, `GeminiProvider`, `GroqProvider`, `HttpClient`, `AITask`, `LabelAnalysisTask`, `LabelExtractionTask`, `RecommendationTask`, `ComparisonTask`, `ComparisonAdvice`, `JsonReplyParser`, `SchemaChecker` |
 | Logic: goals, flags, scoring and ranking | `LogicManager` | `Rule` and its five subclasses, `DietaryChecker`, `Evaluation`, `EvaluationContext`, `Goal`, `LimitGoal`, `MinimumGoal` |
 | Data: accounts, products, analyses and persistence | `DataManager` | `DataStore`, `MySQLDataStore`, `InMemoryDataStore`, `UserRepository`, `ProductRepository`, `AnalysisRepository`, `RecordMapper`, `PasswordHasher`, `DemoDataSeeder` |
 
@@ -95,6 +97,8 @@ changes on exit. For persistence outside Compose, provision MySQL and set
 dietary ingredients, calls AI, applies logic and saves the analysis. If saving
 fails, it returns the completed analysis with `saved=False` and an error code.
 `RecommendationService` ranks the catalogue and requests AI advice.
+`ComparisonService` asks `LogicManager.compare` to rank 2-4 products and
+`ComparisonTask` to explain the ranking, and returns a `Comparison` (not saved).
 
 `JobManager` owns a `ThreadPoolExecutor` (three workers by default). `Job` and
 `Batch` track work; `JobObserver`/`JobLogger` observe updates. Browser pages poll
@@ -220,6 +224,16 @@ can refer to products outside the catalogue.
 The in-process cache holds at most 100 entries and keys by user ID, profile snapshot,
 focus/category options and catalogue product IDs. Identical cached requests reuse
 advice without another AI call.
+
+### Shelf Compare
+
+`LogicManager.compare` scores every product and evaluates its goals and dietary checks.
+Nothing is filtered out. Products with a POSSIBLE_CONCERN or an avoid-list match always
+rank below clean products; the goal score orders the rest, and equal products keep their
+upload order. The AI receives the ranked list and must return one strength and one
+drawback per item plus a short summary; it cannot change the order. If the best product
+still has a problem, the page warns "Highest score, but check the label". Two clean
+products within 5 points are shown as a close call.
 
 ### AI retry and failure handling
 
