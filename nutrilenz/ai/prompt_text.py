@@ -15,7 +15,10 @@ DIETARY_RULES = """
 - Extra product suggestions must avoid the supplied dietary_checks and avoid_ingredients.
   They are not verified: advise checking their ingredients on the pack; never invent certification.
 - Dietary facts do not change nutrition goal_alignment or claim_status.\n"""
-SINGAPORE_PRODUCT_RULES = """- suggested_products: 0 to 3 REAL packaged products that a shopper in SINGAPORE can buy
+GOAL_RULES = """- goal_results are Python's authoritative result for each goal. MET means the goal is met,
+  MISMATCH means it is not, MISSING means the value is not on the label.
+  Never call a goal met, a strong match or a good fit when its status is MISMATCH or MISSING.\n"""
+SINGAPORE_PRODUCT_RULES ="""- suggested_products: 0 to 3 REAL packaged products that a shopper in SINGAPORE can buy
   in local supermarkets (e.g. NTUC FairPrice, Cold Storage, Sheng Siong, Giant) and that suit
   the user's goals better. Prefer products carrying Singapore's Healthier Choice Symbol.
   Only name a product if you are confident it exists and is sold in Singapore; if not sure,

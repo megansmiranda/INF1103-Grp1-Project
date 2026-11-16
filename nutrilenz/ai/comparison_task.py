@@ -3,7 +3,7 @@ from ..domain.profile import Profile
 from .ai_request import AIRequest
 from .ai_task import AITask
 from .comparison_advice import ComparisonAdvice
-from .prompt_text import SHARED_RULES, DIETARY_RULES
+from .prompt_text import SHARED_RULES, DIETARY_RULES, GOAL_RULES
 
 
 class ComparisonTask(AITask):
@@ -15,9 +15,12 @@ class ComparisonTask(AITask):
     RULES = """You help a shopper in Singapore choose between similar packaged foods on a shelf.
 
 Rules:
-""" + SHARED_RULES + DIETARY_RULES + """
-- The products are already ranked by Python. Item 1 is the best fit for the user's goals.
+""" + SHARED_RULES + DIETARY_RULES + GOAL_RULES + """- The products are already ranked by Python. Item 1 is the best fit for the user's goals.
   Never change this order or suggest a different winner.
+- A product with has_concern true (a possible dietary concern or an avoid-list match) always
+  ranks below every product without one, even if its app_score is higher. If item 1 has a
+  lower app_score than another item, say item 1 ranks first because the others have a
+  possible dietary concern or an avoided ingredient. Never call those others the best fit.
 - Base everything on the supplied numbers, ingredients and dietary_results only.
 - summary: max 40 words. Say why item 1 fits the goals best, naming it.
   If several items have the same app_score, say they are close.
@@ -46,6 +49,7 @@ Return exactly these keys:
         items = []
         for rank, scored in enumerate(self._ranked, start=1):
             product = scored.product
+            avoid_matches = product.ingredients_found(list(self._profile.avoid_ingredients))
             items.append({
                 "item": rank,
                 "name": product.display_name(),
@@ -54,7 +58,9 @@ Return exactly these keys:
                 "ingredients": product.ingredient_text,
                 "marketing_claim": product.marketing_claim,
                 "app_score": scored.score,
-                "avoid_list_matches": product.ingredients_found(list(self._profile.avoid_ingredients)),
+                "has_concern": bool(scored.dietary_report.has_concern or avoid_matches),
+                "goal_results": self._goal_facts(self._profile, product),
+                "avoid_list_matches": avoid_matches,
                 "dietary_results": self._dietary_facts(scored.dietary_report),
             })
         payload = {"goals": self._goal_phrase(self._profile),
@@ -67,6 +73,9 @@ Return exactly these keys:
         check = self._checker
         check.exact_keys(data, ("summary", "notes"))
         summary = self._short(check.text(data, "summary"), "summary", 40)
+        winner = self._ranked[0].product.name
+        if winner.casefold() not in summary.casefold():
+            raise ValueError(f"summary must name item 1 ({winner}) as the best fit")
         if not isinstance(data["notes"], list):
             raise ValueError("notes must be a list")
         strengths: dict[int, str] = {}
